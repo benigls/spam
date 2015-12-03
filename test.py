@@ -18,6 +18,9 @@ class TestDataSet(unittest.TestCase):
     def test_dataset_folder_exist(self):
         return self.assertEqual(True, os.path.exists(self.dataset_dir))
 
+    def test_dataset_is_a_folder(self):
+        return self.assertEqual(True, os.path.isdir(self.dataset_dir))
+
 
 if __name__ == '__main__':
     unittest.main()
