@@ -15,8 +15,16 @@ class TestDataSet(unittest.TestCase):
         self.dataset_path = params.DATASET_PATH
         self.dataset_subdirs = params.DATASET_SUBDIRS
 
+        self.dataset_subdirs_path = []
+        for subdir in self.dataset_subdirs:
+            self.dataset_subdirs_path.append(
+                os.path.join(self.dataset_path, subdir)
+            )
+
     def tearDown(self):
-        self.dataset_dir = ''
+        self.dataset_path = ''
+        self.dataset_subdirs = ''
+        self.dataset_subdirs_path = []
 
     def test_dataset_path_exist(self):
         """
@@ -34,10 +42,15 @@ class TestDataSet(unittest.TestCase):
         """
         Test if the dataset sub-directories exist.
         """
-        subdir_path = ''
-        for subdir in self.dataset_subdirs:
-            subdir_path = os.path.join(self.dataset_path, subdir)
-            self.assertTrue(os.path.exists(subdir_path))
+        for subdir in self.dataset_subdirs_path:
+            self.assertTrue(os.path.exists(subdir))
+
+    def test_dataset_subdirs_is_folder(self):
+        """
+        Test if the dataset sub-directories is a folder.
+        """
+        for subdir in self.dataset_subdirs_path:
+            self.assertTrue(os.path.isdir(subdir))
 
 
 if __name__ == '__main__':
