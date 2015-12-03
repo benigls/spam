@@ -15,6 +15,9 @@ class TestDataSet(unittest.TestCase):
     def tearDown(self):
         self.dataset_dir = ''
 
+    def test_dataset_folder_exist(self):
+        return self.assertEqual(True, os.path.exists(self.dataset_dir))
+
 
 if __name__ == '__main__':
     unittest.main()
