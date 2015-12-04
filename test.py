@@ -3,6 +3,7 @@
 
 import unittest
 import os
+import fnmatch
 
 import params
 
@@ -29,6 +30,9 @@ class TestDataSet(unittest.TestCase):
     def tearDown(self):
         self.dataset_path = ''
         self.dataset_subdirs = []
+
+    def count_files(self, path):
+        return len(fnmatch.filter(os.listdir(path), '*.txt'))
 
     def test_dataset_path_exist(self):
         """
@@ -83,6 +87,37 @@ class TestDataSet(unittest.TestCase):
         """
         for subdir in self.dataset_subdirs:
             self.assertTrue(os.path.isdir(subdir['ham_path']))
+
+    def test_dataset_spam_count(self):
+        """
+        Test if the dataset spam counts are correct.
+        """
+        for subdir in self.dataset_subdirs:
+            self.assertEqual(
+                subdir['spam_count'],
+                self.count_files(subdir['spam_path'])
+            )
+
+    def test_dataset_ham_count(self):
+        """
+        Test if the dataset ham counts are correct.
+        """
+        for subdir in self.dataset_subdirs:
+            self.assertEqual(
+                subdir['ham_count'],
+                self.count_files(subdir['ham_path'])
+            )
+
+    def test_dataset_total_count(self):
+        """
+        Test if the dataset total counts are correct.
+        """
+        for subdir in self.dataset_subdirs:
+            self.assertEqual(
+                subdir['total_count'],
+                self.count_files(subdir['ham_path']) +
+                self.count_files(subdir['spam_path'])
+            )
 
 if __name__ == '__main__':
     unittest.main()
