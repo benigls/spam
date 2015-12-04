@@ -19,6 +19,12 @@ class TestDataSet(unittest.TestCase):
             self.dataset_subdirs[i]['path'] = os.path.join(
                 self.dataset_path, self.dataset_subdirs[i]['name']
             )
+            self.dataset_subdirs[i]['ham_path'] = os.path.join(
+                self.dataset_subdirs[i]['path'], 'ham'
+            )
+            self.dataset_subdirs[i]['spam_path'] = os.path.join(
+                self.dataset_subdirs[i]['path'], 'spam'
+            )
 
     def tearDown(self):
         self.dataset_path = ''
@@ -55,36 +61,28 @@ class TestDataSet(unittest.TestCase):
         Test if the dataset sub-directories has a spam folder.
         """
         for subdir in self.dataset_subdirs:
-            self.assertTrue(os.path.exists(
-                os.path.join(subdir['path'], 'spam')
-            ))
+            self.assertTrue(os.path.exists(subdir['spam_path']))
 
     def test_dataset_ham_folder_exist(self):
         """
         Test if the dataset sub-directories has a ham folder.
         """
         for subdir in self.dataset_subdirs:
-            self.assertTrue(os.path.exists(
-                os.path.join(subdir['path'], 'ham')
-            ))
+            self.assertTrue(os.path.exists(subdir['ham_path']))
 
     def test_dataset_spam_is_folder(self):
         """
         Test if the dataset sub-directories spam folder is a folder.
         """
         for subdir in self.dataset_subdirs:
-            self.assertTrue(os.path.isdir(
-                os.path.join(subdir['path'], 'spam')
-            ))
+            self.assertTrue(os.path.isdir(subdir['spam_path']))
 
     def test_dataset_ham_is_folder(self):
         """
         Test if the dataset sub-directories ham folder is a folder.
         """
         for subdir in self.dataset_subdirs:
-            self.assertTrue(os.path.isdir(
-                os.path.join(subdir['path'], 'ham')
-            ))
+            self.assertTrue(os.path.isdir(subdir['ham_path']))
 
 if __name__ == '__main__':
     unittest.main()
