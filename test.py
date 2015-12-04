@@ -32,6 +32,9 @@ class TestDataSet(unittest.TestCase):
         self.dataset_subdirs = []
 
     def count_files(self, path):
+        """
+        Function that counts files with a .txt extension in a given path.
+        """
         return len(fnmatch.filter(os.listdir(path), '*.txt'))
 
     def test_dataset_path_exist(self):
