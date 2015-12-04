@@ -121,6 +121,3 @@ class TestDataSet(unittest.TestCase):
                 self.count_files(subdir['ham_path']) +
                 self.count_files(subdir['spam_path'])
             )
-
-if __name__ == '__main__':
-    unittest.main()
