@@ -6,4 +6,5 @@ class PreProcess:
     """
     A Class that cleans the dataset for machine learning process.
     """
-    pass
+    def __init__(self, dataset_path, dataset_subdirs):
+        pass

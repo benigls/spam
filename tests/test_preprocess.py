@@ -4,6 +4,7 @@
 import unittest
 
 from preprocess import PreProcess
+from common import params
 
 
 class TestPreProcess(unittest.TestCase):
@@ -11,7 +12,10 @@ class TestPreProcess(unittest.TestCase):
     Class for testing the preprocces.
     """
     def setUp(self):
-        self.preprocess = PreProcess()
+        self.preprocess = PreProcess(
+            params.DATASET_PATH,
+            params.DATASET_SUBDIRS,
+        )
 
     def tearDown(self):
         pass
