@@ -4,10 +4,11 @@
 import unittest
 
 from test_dataset import TestDataSet
+from test_preprocess import TestPreProcess
 
 
 def run_test():
-    test_classes = [TestDataSet, ]
+    test_classes = [TestDataSet, TestPreProcess, ]
 
     loader = unittest.TestLoader()
     suites_list = []
