@@ -3,8 +3,8 @@
 
 import unittest
 
-from preprocess import PreProcess
-from common import params
+from spam.preprocess import PreProcess
+from spam.common import params
 
 
 class TestPreProcess(unittest.TestCase):

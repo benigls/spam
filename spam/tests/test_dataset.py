@@ -5,7 +5,7 @@ import unittest
 import os
 import fnmatch
 
-from common import params
+from spam.common import params
 
 
 class TestDataSet(unittest.TestCase):
