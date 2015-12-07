@@ -6,8 +6,8 @@ import os
 import shutil
 from datetime import datetime
 
+import fake_params as fake
 from spam.preprocess import PreProcess
-from spam.common import params
 
 
 class TestPreProcess(unittest.TestCase):
@@ -16,50 +16,12 @@ class TestPreProcess(unittest.TestCase):
     """
     def setUp(self):
         self.preprocess = PreProcess(
-            params.DATASET_PATH,
-            params.DATASET_SUBDIRS,
+            fake.DATASET_PATH,
+            fake.DATASET_SUBDIRS,
         )
 
-        self.dataset_path = os.path.join(
-            os.path.dirname(__file__),
-            'test_dataset',
-        )
-        self.dataset_subdirs = [
-            {
-                'name': 'enron1',
-                'total_count': 5,
-                'ham_count': 3,
-                'spam_count': 2,
-                'path': os.path.join(self.dataset_path, 'enron1'),
-                'ham_path': os.path.join(
-                    self.dataset_path,
-                    'enron1',
-                    'ham'
-                ),
-                'spam_path': os.path.join(
-                    self.dataset_path,
-                    'enron1',
-                    'spam'
-                ),
-            },
-            {
-                'name': 'enron2',
-                'total_count': 6,
-                'ham_count': 2,
-                'spam_count': 4,
-                'path': os.path.join(self.dataset_path, 'enron2'),
-                'ham_path': os.path.join(
-                    self.dataset_path,
-                    'enron2',
-                    'ham'
-                ),
-                'spam_path': os.path.join(
-                    self.dataset_path,
-                    'enron2',
-                    'spam'
-                ),
-            },
-        ]
+        self.dataset_path = fake.DATASET_PATH
+        self.dataset_subdirs = fake.DATASET_SUBDIRS
 
         # create test dataset dir
         self.mkdir(self.dataset_path)
