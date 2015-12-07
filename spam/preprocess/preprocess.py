@@ -19,7 +19,14 @@ class PreProcess:
         email_path_list = []
 
         for subdir in self.dataset_subdirs:
-            email_path_list += os.listdir(subdir['spam_path'])
-            email_path_list += os.listdir(subdir['ham_path'])
+            for file in os.listdir(subdir['spam_path']):
+                email_path_list.append(
+                    os.path.join(subdir['spam_path'], file)
+                )
+
+            for file in os.listdir(subdir['ham_path']):
+                email_path_list.append(
+                    os.path.join(subdir['ham_path'], file)
+                )
 
         return email_path_list
