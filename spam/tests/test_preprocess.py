@@ -78,14 +78,18 @@ class TestPreProcess(unittest.TestCase):
             for id in range(1, subdirs['spam_count'] + 1):
                 self.mkfile(os.path.join(
                     subdirs['spam_path'],
-                    '{}.{}.TEST.spam.txt'.format(id, current_date)
+                    '{}.{}.TEST.spam.txt'.format(
+                        str(id).zfill(4), current_date
+                    )
                 ))
 
             # create ham email files
             for id in range(1, subdirs['ham_count'] + 1):
                 self.mkfile(os.path.join(
                     subdirs['ham_path'],
-                    '{}.{}.TEST.ham.txt'.format(id, current_date)
+                    '{}.{}.TEST.ham.txt'.format(
+                        str(id).zfill(4), current_date
+                    )
                 ))
 
     def tearDown(self):
