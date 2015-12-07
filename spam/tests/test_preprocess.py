@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import os
 
 import fake_params as fake
 from spam.preprocess import PreProcess
@@ -20,16 +21,35 @@ class TestPreProcess(unittest.TestCase):
         self.dataset_path = fake.DATASET_PATH
         self.dataset_subdirs = fake.DATASET_SUBDIRS
 
+        self.dataset_email_path_list = []
+
+        # get email path list
+        for subdir in self.dataset_subdirs:
+            self.dataset_email_path_list += \
+                os.listdir(subdir['spam_path'])
+            self.dataset_email_path_list += \
+                os.listdir(subdir['ham_path'])
+
     def tearDown(self):
         self.preprocess = None
         self.dataset_path = None
         self.dataset_subdirs = None
+        self.dataset_email_path_list = None
 
     def test_preprocess_instance(self):
         """
         Test if preprocess is creating a instance.
         """
         self.assertIsInstance(self.preprocess, PreProcess)
+
+    def test_preprocess_get_emails_path(self):
+        """
+        Test if preprocess can get the emails path.
+        """
+        self.assertEqual(
+            self.dataset_email_path_list,
+            self.preprocess.get_email_path_list()
+        )
 
     def test_preprocess_open_email(self):
         """
