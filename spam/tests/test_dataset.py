@@ -4,6 +4,7 @@
 import unittest
 import os
 import fnmatch
+from datetime import datetime
 
 from spam.common import params
 
@@ -45,7 +46,7 @@ class TestDataSet(unittest.TestCase):
     def check_email_format(self, filenames):
         """
         A helper function that checks if the email file name has a
-        correct format. IDENT.YYYY-MM-DD.OWNER.CLASSIFICATION.txt
+        correct format. IDENT.YYYY-MM-DD.OWNER.CLASS.txt
         """
         if list is type(filenames):
             pass
@@ -61,8 +62,36 @@ class TestDataSet(unittest.TestCase):
             if filename_array_len != 5:
                 print(
                     '{} has only {} info. It must be 5.\nFormat: '
-                    'IDENT.YYYY-MM-DD.OWNER.CLASSIFICATION.txt'.
+                    'IDENT.YYYY-MM-DD.OWNER.CLASS.txt'.
                     format(filename, filename_array_len)
+                )
+                return False
+
+            # checks if index 0 (IDENT) is a 4 digit number.
+            elif not filename_array[0].isdigit() or \
+                    len(filename_array[0]) is not 4:
+                print(
+                    '{} has a wrong IDENT. It must be a 4 digit'
+                    'number.\nExample: `0001`, `1763`'.
+                    format(filename)
+                )
+                return False
+
+            # checks if index 1 (YYYY-MM-DD) is a valid date format.
+            elif not datetime.strptime(filename_array[1], '%Y-%m-%d'):
+                print(
+                    '{} has a wrong date. It must be in this format '
+                    '`YYYY-MM-DD`.\nExample: `2002-03-22`, 2012-10-11'.
+                    format(filename)
+                )
+                return False
+
+            # checks if index 3 (CLASS) is either spam or ham.
+            elif filename_array[3] != 'ham' and \
+                    filename_array[3] != 'spam':
+                print(
+                    '{} has a wrong class name. It must be either '
+                    '`spam` or `ham`.'.format(filename)
                 )
                 return False
 
