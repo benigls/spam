@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import os
-import shutil
-from datetime import datetime
 
 import fake_params as fake
 from spam.preprocess import PreProcess
@@ -23,58 +20,10 @@ class TestPreProcess(unittest.TestCase):
         self.dataset_path = fake.DATASET_PATH
         self.dataset_subdirs = fake.DATASET_SUBDIRS
 
-        # create test dataset dir
-        self.mkdir(self.dataset_path)
-
-        # get current date YYYY-MM-DD
-        current_date = datetime.now().strftime('%Y-%m-%d')
-
-        # create subdirs and email create files
-        for subdirs in self.dataset_subdirs:
-            # create subdirs
-            self.mkdir(subdirs['path'])
-            self.mkdir(subdirs['ham_path'])
-            self.mkdir(subdirs['spam_path'])
-
-            # create spam email files
-            for id in range(1, subdirs['spam_count'] + 1):
-                self.mkfile(os.path.join(
-                    subdirs['spam_path'],
-                    '{}.{}.TEST.spam.txt'.format(
-                        str(id).zfill(4), current_date
-                    )
-                ))
-
-            # create ham email files
-            for id in range(1, subdirs['ham_count'] + 1):
-                self.mkfile(os.path.join(
-                    subdirs['ham_path'],
-                    '{}.{}.TEST.ham.txt'.format(
-                        str(id).zfill(4), current_date
-                    )
-                ))
-
     def tearDown(self):
         self.preprocess = None
-
-        # remove test dataset if it does exist.
-        if os.path.exists(self.dataset_path):
-            shutil.rmtree(self.dataset_path)
-
-    def mkdir(self, dir):
-        """
-        Check if the directory exist and create if it doesn't.
-        """
-        if not os.path.exists(dir):
-            os.mkdir(dir)
-
-    def mkfile(self, file_path):
-        """
-        Check if the file exist and create if it doesn't.
-        """
-        if not os.path.isfile(file_path):
-            file = open(file_path, 'w')
-            file.close()
+        self.dataset_path = None
+        self.dataset_subdirs = None
 
     def test_preprocess_instance(self):
         """
