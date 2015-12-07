@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import os
+import shutil
+from datetime import datetime
 
 from spam.preprocess import PreProcess
 from spam.common import params
@@ -17,8 +20,95 @@ class TestPreProcess(unittest.TestCase):
             params.DATASET_SUBDIRS,
         )
 
+        self.dataset_path = os.path.join(
+            os.path.dirname(__file__),
+            'test_dataset',
+        )
+        self.dataset_subdirs = [
+            {
+                'name': 'enron1',
+                'total_count': 5,
+                'ham_count': 3,
+                'spam_count': 2,
+                'path': os.path.join(self.dataset_path, 'enron1'),
+                'ham_path': os.path.join(
+                    self.dataset_path,
+                    'enron1',
+                    'ham'
+                ),
+                'spam_path': os.path.join(
+                    self.dataset_path,
+                    'enron1',
+                    'spam'
+                ),
+            },
+            {
+                'name': 'enron2',
+                'total_count': 6,
+                'ham_count': 2,
+                'spam_count': 4,
+                'path': os.path.join(self.dataset_path, 'enron2'),
+                'ham_path': os.path.join(
+                    self.dataset_path,
+                    'enron2',
+                    'ham'
+                ),
+                'spam_path': os.path.join(
+                    self.dataset_path,
+                    'enron2',
+                    'spam'
+                ),
+            },
+        ]
+
+        # create test dataset dir
+        self.mkdir(self.dataset_path)
+
+        # get current date YYYY-MM-DD
+        current_date = datetime.now().strftime('%Y-%m-%d')
+
+        # create subdirs and email create files
+        for subdirs in self.dataset_subdirs:
+            # create subdirs
+            self.mkdir(subdirs['path'])
+            self.mkdir(subdirs['ham_path'])
+            self.mkdir(subdirs['spam_path'])
+
+            # create spam email files
+            for id in range(1, subdirs['spam_count'] + 1):
+                self.mkfile(os.path.join(
+                    subdirs['spam_path'],
+                    '{}.{}.TEST.spam.txt'.format(id, current_date)
+                ))
+
+            # create ham email files
+            for id in range(1, subdirs['ham_count'] + 1):
+                self.mkfile(os.path.join(
+                    subdirs['ham_path'],
+                    '{}.{}.TEST.ham.txt'.format(id, current_date)
+                ))
+
     def tearDown(self):
-        pass
+        self.preprocess = None
+
+        # remove test dataset if it does exist.
+        if os.path.exists(self.dataset_path):
+            shutil.rmtree(self.dataset_path)
+
+    def mkdir(self, dir):
+        """
+        Check if the directory exist and create if it doesn't.
+        """
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+
+    def mkfile(self, file_path):
+        """
+        Check if the file exist and create if it doesn't.
+        """
+        if not os.path.isfile(file_path):
+            file = open(file_path, 'w')
+            file.close()
 
     def test_preprocess_instance(self):
         """
