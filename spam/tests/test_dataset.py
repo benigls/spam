@@ -17,21 +17,6 @@ class TestDataSet(unittest.TestCase):
         self.dataset_path = params.DATASET_PATH
         self.dataset_subdirs = params.DATASET_SUBDIRS
 
-        # add the path of enron_dataset subdirs ham and spam
-        # e.g. enron_dataset/enron1/spam/ = `spam_path`
-        #      enron_dataset/enron3/ham/ = `ham_path`
-        #      enron_dataset/enron6/ = `path`
-        for i in range(len(self.dataset_subdirs)):
-            self.dataset_subdirs[i]['path'] = os.path.join(
-                self.dataset_path, self.dataset_subdirs[i]['name']
-            )
-            self.dataset_subdirs[i]['ham_path'] = os.path.join(
-                self.dataset_subdirs[i]['path'], 'ham'
-            )
-            self.dataset_subdirs[i]['spam_path'] = os.path.join(
-                self.dataset_subdirs[i]['path'], 'spam'
-            )
-
     def tearDown(self):
         self.dataset_path = ''
         self.dataset_subdirs = []
