@@ -13,6 +13,9 @@ class PreProcess:
         self.dataset_subdirs = dataset_subdirs
 
     def get_email_path_list(self):
+        """
+        A function that get path of all email files.
+        """
         email_path_list = []
 
         for subdir in self.dataset_subdirs:
