@@ -42,6 +42,32 @@ class TestDataSet(unittest.TestCase):
         """
         return len(fnmatch.filter(os.listdir(path), '*.txt'))
 
+    def check_email_format(self, filenames):
+        """
+        A helper function that checks if the email file name has a
+        correct format. IDENT.YYYY-MM-DD.OWNER.CLASSIFICATION.txt
+        """
+        if list is type(filenames):
+            pass
+        elif str is type(filenames):
+            filenames = list(filenames)
+        else:
+            print('This function only accept string and list of strings.')
+
+        for filename in filenames:
+            filename_array = filename.split('.')
+            filename_array_len = len(filename_array)
+
+            if filename_array_len != 5:
+                print(
+                    '{} has only {} info. It must be 5.\nFormat: '
+                    'IDENT.YYYY-MM-DD.OWNER.CLASSIFICATION.txt'.
+                    format(filename, filename_array_len)
+                )
+                return False
+
+        return True
+
     def test_dataset_path_exist(self):
         """
         Test if the dataset path exist.
@@ -126,3 +152,13 @@ class TestDataSet(unittest.TestCase):
                 self.count_files(subdir['ham_path']) +
                 self.count_files(subdir['spam_path'])
             )
+
+    def test_dataset_email_format(self):
+        """
+        Test if the dataset email name formats are correct.
+        """
+        for subdir in self.dataset_subdirs:
+            paths = os.listdir(subdir['ham_path']) + \
+                os.listdir(subdir['spam_path'])
+
+            self.assertTrue(self.check_email_format(paths))
