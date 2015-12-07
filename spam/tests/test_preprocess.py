@@ -17,11 +17,10 @@ class TestPreProcess(unittest.TestCase):
             fake.DATASET_PATH,
             fake.DATASET_SUBDIRS,
         )
-
         self.dataset_path = fake.DATASET_PATH
         self.dataset_subdirs = fake.DATASET_SUBDIRS
-
         self.dataset_email_path_list = []
+        self.email_list = []
 
         # get email path list
         for subdir in self.dataset_subdirs:
@@ -35,6 +34,7 @@ class TestPreProcess(unittest.TestCase):
         self.dataset_path = None
         self.dataset_subdirs = None
         self.dataset_email_path_list = None
+        self.email_list = None
 
     def test_preprocess_instance(self):
         """
@@ -51,17 +51,14 @@ class TestPreProcess(unittest.TestCase):
             self.preprocess.get_email_path_list()
         )
 
-    def test_preprocess_open_email(self):
-        """
-        Test if preprocess can open email from the dataset.
-        """
-        pass
-
     def test_preprocess_read_email(self):
         """
         Test if preprocess can read email from the dataset.
         """
-        pass
+        self.assertEqual(
+            self.email_list,
+            self.preprocess.open_email(self.dataset_email_path_list)
+        )
 
     def test_preprocess_regex_email(self):
         """
