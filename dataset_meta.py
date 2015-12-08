@@ -58,3 +58,8 @@ for i in range(len(DATASET_SUBDIRS)):
     DATASET_SUBDIRS[i]['spam_path'] = os.path.join(
         DATASET_SUBDIRS[i]['path'], 'spam'
     )
+
+DATASET_META = {
+    'path': DATASET_PATH,
+    'subdirs': DATASET_SUBDIRS,
+}
