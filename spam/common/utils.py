@@ -25,11 +25,3 @@ def get_file_path_list(dataset_meta):
             ))
 
     return email_file_path_list
-
-
-def split_dataset(file_path_list):
-    """
-    A helper function that accepts a list of file path and split it
-    into training data and test data.
-    """
-    pass
