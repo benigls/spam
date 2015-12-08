@@ -3,8 +3,7 @@
 
 from sklearn.cross_validation import train_test_split
 
-from dataset_meta import DATASET_META
-
+from spam.common import DATASET_META
 from spam.common.utils import get_file_path_list
 from spam.preprocess import Preprocess
 

@@ -9,13 +9,13 @@ from datetime import datetime
 from spam.common import DATASET_META
 
 
-class TestDataSet(unittest.TestCase):
+class TestDataset(unittest.TestCase):
     """
     Class for testing the enron dataset.
     """
     def setUp(self):
         self.dataset_path = DATASET_META['path']
-        self.dataset_subdirs = DATASET_META['subdir']
+        self.dataset_subdirs = DATASET_META['subdirs']
 
     def tearDown(self):
         self.dataset_path = ''
