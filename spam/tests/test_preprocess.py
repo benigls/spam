@@ -60,7 +60,10 @@ class TestPreProcess(unittest.TestCase):
         """
         Test if preprocess can read email from the dataset.
         """
-        pass
+        self.assertEqual(
+            self.email_list,
+            self.preprocess.open_email(self.dataset_email_path_list)
+        )
 
     def test_preprocess_regex_email(self):
         """

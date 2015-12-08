@@ -30,3 +30,14 @@ class PreProcess:
                 )
 
         return email_path_list
+
+    def open_email(self, email_path_list=[]):
+        """
+        A function that opens a list of email file path
+        and save it in a list.
+        """
+        # emails = []
+
+        # for email_path in email_path_list:
+        # with open(email_path_list[1], 'r') as email:
+        #     content = ''.join(email.readlines())
