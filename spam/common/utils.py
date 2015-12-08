@@ -22,6 +22,8 @@ def get_file_path_list(dataset_meta):
                 os.path.join(subdir['ham_path'], file)
             )
 
+    return email_file_path_list
+
 
 def split_dataset(file_path_list):
     """
