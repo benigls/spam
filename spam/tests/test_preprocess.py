@@ -2,68 +2,32 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import os
 
-import fake_params as fake
-from spam.preprocess import PreProcess
+from fake_dataset_meta import FAKE_DATASET_META
+from spam.preprocess import Preprocess
 
 
-class TestPreProcess(unittest.TestCase):
+class TestPreprocess(unittest.TestCase):
     """
     Class for testing the preprocces.
     """
     def setUp(self):
-        self.preprocess = PreProcess(
-            fake.DATASET_PATH,
-            fake.DATASET_SUBDIRS,
-        )
-        self.dataset_path = fake.DATASET_PATH
-        self.dataset_subdirs = fake.DATASET_SUBDIRS
-        self.dataset_email_path_list = []
-        self.email_list = []
-
-        # get email path list
-        for subdir in self.dataset_subdirs:
-            for file in os.listdir(subdir['spam_path']):
-                self.dataset_email_path_list.append(
-                    os.path.join(subdir['spam_path'], file)
-                )
-
-            for file in os.listdir(subdir['ham_path']):
-                self.dataset_email_path_list.append(
-                    os.path.join(subdir['ham_path'], file)
-                )
+        self.preprocess = Preprocess()
 
     def tearDown(self):
         self.preprocess = None
-        self.dataset_path = None
-        self.dataset_subdirs = None
-        self.dataset_email_path_list = None
-        self.email_list = None
 
     def test_preprocess_instance(self):
         """
         Test if preprocess is creating a instance.
         """
-        self.assertIsInstance(self.preprocess, PreProcess)
-
-    def test_preprocess_get_emails_path(self):
-        """
-        Test if preprocess can get the emails path.
-        """
-        self.assertEqual(
-            self.dataset_email_path_list,
-            self.preprocess.get_email_path_list()
-        )
+        self.assertIsInstance(self.preprocess, Preprocess)
 
     def test_preprocess_read_email(self):
         """
         Test if preprocess can read email from the dataset.
         """
-        self.assertEqual(
-            self.email_list,
-            self.preprocess.open_email(self.dataset_email_path_list)
-        )
+        pass
 
     def test_preprocess_regex_email(self):
         """
