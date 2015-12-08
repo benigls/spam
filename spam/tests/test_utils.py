@@ -3,8 +3,8 @@
 
 import unittest
 
-import fake_dataset_meta
 from spam.common import utils
+from fake_dataset_meta import FAKE_DATASET_META
 
 
 class TestUtils(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestUtils(unittest.TestCase):
     A test class that tests utility functions.
     """
     def setUp(self):
-        self.fake_dataset_meta = fake_dataset_meta.FAKE_DATASET_META
+        self.fake_dataset_meta = FAKE_DATASET_META
 
     def tearDown(self):
         self.fake_dataset_meta = None
