@@ -3,11 +3,13 @@
 
 import unittest
 
+from test_dataset import TestDataset
 from test_utils import TestUtils
+from test_preprocess import TestPreprocess
 
 
 def run_test():
-    test_classes = [TestUtils]
+    test_classes = [TestDataset, TestUtils, TestPreprocess, ]
 
     loader = unittest.TestLoader()
     suites_list = []

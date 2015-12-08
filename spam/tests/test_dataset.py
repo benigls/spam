@@ -6,7 +6,7 @@ import os
 import fnmatch
 from datetime import datetime
 
-from spam.common import params
+from spam.common import DATASET_META
 
 
 class TestDataSet(unittest.TestCase):
@@ -14,8 +14,8 @@ class TestDataSet(unittest.TestCase):
     Class for testing the enron dataset.
     """
     def setUp(self):
-        self.dataset_path = params.DATASET_PATH
-        self.dataset_subdirs = params.DATASET_SUBDIRS
+        self.dataset_path = DATASET_META['path']
+        self.dataset_subdirs = DATASET_META['subdir']
 
     def tearDown(self):
         self.dataset_path = ''
