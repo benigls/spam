@@ -4,4 +4,6 @@
 
 from __future__ import absolute_import
 
-from .preprocess import PreProcess
+# so I can import the module below like this:
+# from spam.preprocess import Preprocess
+from .preprocess import Preprocess
