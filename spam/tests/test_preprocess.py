@@ -4,6 +4,7 @@
 import unittest
 
 from spam.preprocess import Preprocess
+from fake_dataset_meta import FAKE_DATASET_META as FAKE
 
 
 class TestPreprocess(unittest.TestCase):
@@ -44,15 +45,10 @@ class TestPreprocess(unittest.TestCase):
         """
         Test if preprocess can read email from the dataset.
         """
-        pass
-
-    def test_preprocess_instance(self):
-        """
-        Test if preprocess can create a instance.
-        """
-        preprocess = Preprocess()
-
-        self.assertIsInstance(preprocess, Preprocess)
+        self.assertEqual(
+            self.fake_email,
+            Preprocess.read_email(FAKE['file_path_list'][2][0])
+        )
 
     def test_preprocess_regex_email(self):
         """
@@ -85,15 +81,7 @@ class TestPreprocess(unittest.TestCase):
         """
         Test of preprocess can clean(regex, token, stop) a email.
         """
-        preprocess = Preprocess()
-
         self.assertEqual(
             ' '.join(self.stopwords),
-            preprocess.clean(self.fake_email)
+            Preprocess.clean(self.fake_email)
         )
-
-    def test_preprocess_bag_of_words(self):
-        """
-        Test if preprocess can produces a correct bag-of-words.
-        """
-        pass

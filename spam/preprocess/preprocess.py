@@ -37,9 +37,23 @@ class Preprocess:
         return [word for word in word_list
                 if word not in stopwords.words('english')]
 
-    def clean(self, text):
+    @staticmethod
+    def clean(text):
         """
         A function that cleans text (regex, token, stop).
         """
-        word_list = self.stopwords(self.tokenize(self.regex(text)))
+        word_list = Preprocess.stopwords(
+            Preprocess.tokenize(Preprocess.regex(text))
+        )
         return ' '.join(word_list)
+
+    @staticmethod
+    def read_email(path):
+        """
+        A function that accepts file paths and return it's contents.
+        """
+        with open(path, 'r') as file:
+            content = ''.join(file.readlines())
+            file.close()
+
+        return content
