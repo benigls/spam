@@ -36,3 +36,10 @@ class Preprocess:
         """
         return [word for word in word_list
                 if word not in stopwords.words('english')]
+
+    def clean(self, text):
+        """
+        A function that cleans text (regex, token, stop).
+        """
+        word_list = self.stopwords(self.tokenize(self.regex(text)))
+        return ' '.join(word_list)

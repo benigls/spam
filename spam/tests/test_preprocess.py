@@ -36,14 +36,23 @@ class TestPreprocess(unittest.TestCase):
 
     def tearDown(self):
         self.fake_email = None
-        self.tokenize_email = None
         self.regex_email = None
+        self.tokenize_email = None
+        self.stopwords = None
 
     def test_preprocess_read_email(self):
         """
         Test if preprocess can read email from the dataset.
         """
         pass
+
+    def test_preprocess_instance(self):
+        """
+        Test if preprocess can create a instance.
+        """
+        preprocess = Preprocess()
+
+        self.assertIsInstance(preprocess, Preprocess)
 
     def test_preprocess_regex_email(self):
         """
@@ -74,11 +83,14 @@ class TestPreprocess(unittest.TestCase):
 
     def test_preprocess_clean_email(self):
         """
-        Test of preprocess can clean a email.
-        This involves replacing characters via regex,
-        tokenizing, and removing stopwords.
+        Test of preprocess can clean(regex, token, stop) a email.
         """
-        pass
+        preprocess = Preprocess()
+
+        self.assertEqual(
+            ' '.join(self.stopwords),
+            preprocess.clean(self.fake_email)
+        )
 
     def test_preprocess_bag_of_words(self):
         """
