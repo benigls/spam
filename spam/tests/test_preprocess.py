@@ -3,7 +3,7 @@
 
 import unittest
 
-from spam.preprocess import Preprocess
+from spam.preprocess import preprocess
 from fake_dataset_meta import FAKE_DATASET_META as FAKE
 
 
@@ -47,7 +47,7 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             self.fake_email,
-            Preprocess.read_email(FAKE['file_path_list'][2][0])
+            preprocess.read_email(FAKE['file_path_list'][2][0])
         )
 
     def test_preprocess_regex_email(self):
@@ -56,7 +56,7 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             self.regex_email,
-            Preprocess.regex(self.fake_email)
+            preprocess.regex(self.fake_email)
         )
 
     def test_preprocess_tokenize_email(self):
@@ -65,7 +65,7 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             set(self.tokenize_email),
-            set(Preprocess.tokenize(self.regex_email))
+            set(preprocess.tokenizer(self.regex_email))
         )
 
     def test_preprocess_stopwords(self):
@@ -74,7 +74,7 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             set(self.stopwords),
-            set(Preprocess.stopwords(self.tokenize_email))
+            set(preprocess.remove_stopwords(self.tokenize_email))
         )
 
     def test_preprocess_clean_email(self):
@@ -83,5 +83,5 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             ' '.join(self.stopwords),
-            Preprocess.clean(self.fake_email)
+            preprocess.clean(self.fake_email)
         )
