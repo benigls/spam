@@ -25,11 +25,15 @@ class TestPreprocess(unittest.TestCase):
             'and', 'how', 'much', 'of', 'it', 'they', 'are',
             'able', 'to', 'eat', '.',
         ]
+        self.regex_email = ' get that new car 8434 people nowthe ' \
+            'weather or climate in any particular environment ' \
+            'can change and affect what people eat and how much ' \
+            'of it they a able to eat'
 
     def tearDown(self):
-        self.preprocess = None
         self.fake_email = None
         self.tokenize_email = None
+        self.regex_email = None
 
     def test_preprocess_read_email(self):
         """
@@ -39,10 +43,12 @@ class TestPreprocess(unittest.TestCase):
 
     def test_preprocess_regex_email(self):
         """
-        Test if preprocess regex can remove non-alphanumeric
-        characters and the word `Subject:` and replace it with a space.
+        Test if preprocess regex can remove noise characters.
         """
-        pass
+        self.assertEqual(
+            self.regex_email,
+            Preprocess.regex(self.fake_email)
+        )
 
     def test_preprocess_tokenize_email(self):
         """
