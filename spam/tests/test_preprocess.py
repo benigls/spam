@@ -16,19 +16,23 @@ class TestPreprocess(unittest.TestCase):
             'people nowthe weather or climate in any particular ' \
             'environment can change and affect what people eat ' \
             'and how much of it they are able to eat .'
-
-        self.tokenize_email = [
-            'Subject', ':', 'get', 'that', 'new', 'car',
-            '8434', 'people', 'nowthe', 'weather', 'or', 'climate',
-            'in', 'any', 'particular', 'environment', 'can',
-            'change', 'and', 'affect', 'what', 'people', 'eat',
-            'and', 'how', 'much', 'of', 'it', 'they', 'are',
-            'able', 'to', 'eat', '.',
-        ]
         self.regex_email = ' get that new car 8434 people nowthe ' \
             'weather or climate in any particular environment can ' \
             'change and affect what people eat and how much of it ' \
-            'they a able to eat '
+            'they are able to eat '
+        self.tokenize_email = [
+            'get', 'that', 'new', 'car', '8434', 'people', 'nowthe',
+            'weather', 'or', 'climate', 'in', 'any', 'particular',
+            'environment', 'can', 'change', 'and', 'affect', 'what',
+            'people', 'eat', 'and', 'how', 'much', 'of', 'it',
+            'they', 'are', 'able', 'to', 'eat',
+        ]
+        self.stopwords = [
+            'get', 'new', 'car', '8434', 'people', 'nowthe',
+            'weather', 'climate', 'particular', 'environment',
+            'change', 'affect', 'people', 'eat', 'much', 'able',
+            'eat',
+        ]
 
     def tearDown(self):
         self.fake_email = None
@@ -55,15 +59,18 @@ class TestPreprocess(unittest.TestCase):
         Test if preprocess can tokenize email.
         """
         self.assertEqual(
-            self.tokenize_email,
-            Preprocess.tokenize(self.fake_email)
+            set(self.tokenize_email),
+            set(Preprocess.tokenize(self.regex_email))
         )
 
     def test_preprocess_stopwords(self):
         """
         Test if preprocess can remove stopwords.
         """
-        pass
+        self.assertEqual(
+            set(self.stopwords),
+            set(Preprocess.stopwords(self.tokenize_email))
+        )
 
     def test_preprocess_clean_email(self):
         """
