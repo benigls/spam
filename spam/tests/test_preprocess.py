@@ -11,7 +11,6 @@ class TestPreprocess(unittest.TestCase):
     Class for testing the preprocces.
     """
     def setUp(self):
-        self.preprocess = Preprocess()
         self.fake_email = \
             'Subject: get that new car 8434\n' \
             'people nowthe weather or climate in any particular ' \
@@ -32,15 +31,16 @@ class TestPreprocess(unittest.TestCase):
         self.fake_email = None
         self.tokenize_email = None
 
-    def test_preprocess_instance(self):
-        """
-        Test if preprocess is creating a instance.
-        """
-        self.assertIsInstance(self.preprocess, Preprocess)
-
     def test_preprocess_read_email(self):
         """
         Test if preprocess can read email from the dataset.
+        """
+        pass
+
+    def test_preprocess_regex_email(self):
+        """
+        Test if preprocess regex can remove non-alphanumeric
+        characters and the word `Subject:` and replace it with a space.
         """
         pass
 
@@ -50,15 +50,8 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             self.tokenize_email,
-            self.preprocess.tokenize(self.fake_email)
+            Preprocess.tokenize(self.fake_email)
         )
-
-    def test_preprocess_regex_email(self):
-        """
-        Test if preprocess regex can remove non-alphanumeric
-        characters and the word `Subject:` and replace it with a space.
-        """
-        pass
 
     def test_preprocess_stopwords(self):
         """

@@ -8,7 +8,8 @@ class Preprocess:
     """
     A Class that cleans the dataset for machine learning process.
     """
-    def tokenize(self, text):
+    @staticmethod
+    def tokenize(text):
         """
         A function that splits a text.
         """
