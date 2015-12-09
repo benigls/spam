@@ -26,9 +26,9 @@ class TestPreprocess(unittest.TestCase):
             'able', 'to', 'eat', '.',
         ]
         self.regex_email = ' get that new car 8434 people nowthe ' \
-            'weather or climate in any particular environment ' \
-            'can change and affect what people eat and how much ' \
-            'of it they a able to eat'
+            'weather or climate in any particular environment can ' \
+            'change and affect what people eat and how much of it ' \
+            'they a able to eat '
 
     def tearDown(self):
         self.fake_email = None
