@@ -47,6 +47,18 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             self.fake_email,
+            preprocess.read_email(
+                FAKE['file_path_list'][2][0],
+                clean=False
+            )
+        )
+
+    def test_preprocess_read_email_clean(self):
+        """
+        Test if preprocess ca email from the dataset with cleaning.
+        """
+        self.assertEqual(
+            ' '.join(self.stopwords),
             preprocess.read_email(FAKE['file_path_list'][2][0])
         )
 
@@ -83,5 +95,5 @@ class TestPreprocess(unittest.TestCase):
         """
         self.assertEqual(
             ' '.join(self.stopwords),
-            preprocess.clean(self.fake_email)
+            preprocess.clean_text(self.fake_email)
         )

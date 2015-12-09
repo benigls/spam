@@ -37,7 +37,7 @@ def remove_stopwords(word_list):
             if word not in stopwords.words('english')]
 
 
-def clean(text):
+def clean_text(text):
     """
     A function that cleans text (regex, token, stop).
     """
@@ -45,7 +45,7 @@ def clean(text):
     return ' '.join(word_list)
 
 
-def read_email(path):
+def read_email(path, clean=True):
     """
     A function that accepts file paths and return it's contents.
     """
@@ -53,4 +53,4 @@ def read_email(path):
         content = ''.join(file.readlines())
         file.close()
 
-    return content
+    return clean_text(content) if clean else content
