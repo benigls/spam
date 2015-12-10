@@ -56,7 +56,7 @@ test_data = pd.DataFrame(
         'email': [preprocess.read_email(path) for path in test_path],
         'class': [1 if cl == 'spam' else 0 for cl in test_class]
     },
-    columns=['email', 'class', 'class2'],
+    columns=['email', 'class'],
 )
 
 unlabeled_data.to_csv('unlabel_data.csv')
