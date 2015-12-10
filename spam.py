@@ -33,9 +33,14 @@ train_path, test_path, \
         random_state=0,
     )
 
+# generate panda dataframes and export it to csv
+# class: -1 = no class, 0 = ham, 1 = spam
 unlabeled_data = pd.DataFrame(
-    data=[preprocess.read_email(path) for path in unlabeled_path],
-    columns=['email'],
+    data={
+        'email': [preprocess.read_email(path) for path in unlabeled_path],
+        'class': [-1 for _ in range(len(train_path))]
+    },
+    columns=['email', 'class'],
 )
 
 train_data = pd.DataFrame(
