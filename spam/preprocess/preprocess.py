@@ -5,6 +5,9 @@ A set of function that cleans the dataset
 for machine learning process.
 """
 
+import io
+import sys
+
 import re
 
 from nltk import tokenize
@@ -45,12 +48,31 @@ def clean_text(text):
     return ' '.join(word_list)
 
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+
+@static_vars(success=0, fail=0)
 def read_email(path, clean=True):
     """
     A function that accepts file paths and return it's contents.
     """
-    with open(path, 'r') as file:
-        content = ''.join(file.readlines())
+    with io.open(path, 'r', encoding='cp1252') as file:
+        try:
+            content = ''.join(file.readlines())
+            read_email.success += 1
+        except UnicodeDecodeError:
+            content = ''
+            read_email.fail += 1
+
+        sys.stdout.write("Success: {} \t".format(read_email.success))
+        sys.stdout.write("Fail: {} \r".format(read_email.fail))
+        sys.stdout.flush()
+
         file.close()
 
     return clean_text(content) if clean else content
