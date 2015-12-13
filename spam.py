@@ -65,3 +65,7 @@ test_data = pd.DataFrame(
 unlabeled_data.to_csv('unlabel_data.csv')
 train_data.to_csv('train_data.csv')
 test_data.to_csv('test_data.csv')
+
+unlabel_feature = preprocess.count_vectorizer(unlabeled_data)
+train_feature = preprocess.count_vectorizer(train_data)
+test_feature = preprocess.count_vectorizer(test_data)
