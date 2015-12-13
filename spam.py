@@ -38,7 +38,7 @@ train_path, test_path, \
 unlabeled_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in unlabeled_path],
-        'class': [-1 for _ in range(len(train_path))]
+        'class': [-1 for _ in range(len(unlabeled_path))]
     },
     columns=['email', 'class'],
 )
