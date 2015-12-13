@@ -21,6 +21,7 @@ file_path_list = get_file_path_list(DATASET_META)
 path, classification = zip(*file_path_list)
 
 # split the data into unlabeled and labeled data
+print('spliting the dataset')
 unlabeled_path, labeled_path, \
     _, labeled_class = train_test_split(
         path,
@@ -39,6 +40,7 @@ train_path, test_path, \
     )
 
 # generate panda dataframes and export it to csv
+print('generating unlabeled dataframe')
 unlabeled_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in unlabeled_path],
@@ -47,6 +49,7 @@ unlabeled_data = pd.DataFrame(
     columns=['email', 'class'],
 )
 
+print('generating train dataframe')
 train_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in train_path],
@@ -55,6 +58,7 @@ train_data = pd.DataFrame(
     columns=['email', 'class'],
 )
 
+print('generating test dataframe')
 test_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in test_path],
@@ -64,16 +68,22 @@ test_data = pd.DataFrame(
 )
 
 # export dataframes to csv
-unlabeled_data.to_csv('unlabel_data.csv')
+unlabeled_data.to_csv('unlabeled_data.csv')
 train_data.to_csv('train_data.csv')
 test_data.to_csv('test_data.csv')
 
+# read_csv files
+# unlabeled_data = pd.read_csv('unlabeled_data.csv')
+# train_data = pd.read_csv('train_data.csv', encoding='iso-8859-1')
+# test_data = pd.read_csv('test_data.csv', encoding='iso-8859-1')
+
 # generate feature vector
-unlabel_feature = preprocess.count_vectorizer(unlabeled_data)
-train_feature = preprocess.count_vectorizer(train_data)
-test_feature = preprocess.count_vectorizer(test_data)
+unlabeled_feat, _ = preprocess.count_vectorizer([unlabeled_data['email']])
+train_feat, test_feat = preprocess.count_vectorizer([
+    train_data['email'], test_data['email']
+])
 
 # save feature vector as .npy file
-np.save('unlabel_feature.npy', unlabel_feature)
-np.save('train_feature.npy', unlabel_feature)
-np.save('test_feature.npy', unlabel_feature)
+np.save('unlabeled_feature.npy', unlabeled_feat)
+np.save('train_feature.npy', train_feat)
+np.save('test_feature.npy', test_feat)
