@@ -62,17 +62,19 @@ def read_email(path, clean=True):
     return clean_text(content) if clean else content
 
 
-def count_vectorizer(series, test=None):
+def count_vectorizer(dataset):
     """
     A function that transforms panda series to count vectorizer
     If parameter `test` is True the function will only transform the
     series but if the parameter `test` is False the function
     will fit and transform the series.
     """
-    fit_transform = True if not test else False
-    email_list = [email.encode('utf-8')
-                  for email in series.values.tolist()
-                  if type(email) is not float]
+    clean = lambda x: [email.encode('utf-8')
+                       for email in x.values.tolist()
+                       if type(email) is not float]
+
+    train_list = clean(dataset[0])
+    test_list = clean(dataset[1]) if len(dataset) == 2 else None
 
     vector = CountVectorizer(
         analyzer='word',
@@ -83,7 +85,11 @@ def count_vectorizer(series, test=None):
     )
     normalizer = Normalizer()
 
-    feat_vector = vector.fit_transform(email_list) \
-        if fit_transform else vector.transform(email_list)
+    train_vector = normalizer.fit_transform(
+        vector.fit_transform(train_list)
+    ).toarray()
+    test_vector = normalizer.fit_transform(
+        vector.transform(test_list)
+    ).toarray() if len(dataset) == 2 else None
 
-    return normalizer.fit_transform(feat_vector).toarray()
+    return train_vector, test_vector
