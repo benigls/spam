@@ -9,6 +9,10 @@ from spam.common.utils import get_file_path_list
 from spam.preprocess import preprocess
 
 
+UNLABEL = -1
+HAM = 0
+SPAM = 1
+
 file_path_list = get_file_path_list(DATASET_META)
 
 # transform list of tuple into two list
@@ -34,11 +38,10 @@ train_path, test_path, \
     )
 
 # generate panda dataframes and export it to csv
-# class: -1 = no class, 0 = ham, 1 = spam
 unlabeled_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in unlabeled_path],
-        'class': [-1 for _ in range(len(unlabeled_path))]
+        'class': [UNLABEL for _ in range(len(unlabeled_path))]
     },
     columns=['email', 'class'],
 )
@@ -46,7 +49,7 @@ unlabeled_data = pd.DataFrame(
 train_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in train_path],
-        'class': [1 if cl == 'spam' else 0 for cl in train_class]
+        'class': [SPAM if cl == 'spam' else HAM for cl in train_class]
     },
     columns=['email', 'class'],
 )
@@ -54,7 +57,7 @@ train_data = pd.DataFrame(
 test_data = pd.DataFrame(
     data={
         'email': [preprocess.read_email(path) for path in test_path],
-        'class': [1 if cl == 'spam' else 0 for cl in test_class]
+        'class': [SPAM if cl == 'spam' else HAM for cl in test_class]
     },
     columns=['email', 'class'],
 )
