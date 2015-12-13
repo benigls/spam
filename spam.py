@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import numpy as np
 import pandas as pd
 from sklearn.cross_validation import train_test_split
 
@@ -62,10 +63,17 @@ test_data = pd.DataFrame(
     columns=['email', 'class'],
 )
 
+# export dataframes to csv
 unlabeled_data.to_csv('unlabel_data.csv')
 train_data.to_csv('train_data.csv')
 test_data.to_csv('test_data.csv')
 
+# generate feature vector
 unlabel_feature = preprocess.count_vectorizer(unlabeled_data)
 train_feature = preprocess.count_vectorizer(train_data)
 test_feature = preprocess.count_vectorizer(test_data)
+
+# save feature vector as .npy file
+np.save('unlabel_feature.npy', unlabel_feature)
+np.save('train_feature.npy', unlabel_feature)
+np.save('test_feature.npy', unlabel_feature)
