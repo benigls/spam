@@ -10,6 +10,7 @@ import re
 from nltk import tokenize
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import Normalizer
 
 
 def regex(text):
@@ -69,6 +70,9 @@ def count_vectorizer(series, test=None):
     will fit and transform the series.
     """
     fit_transform = True if not test else False
+    email_list = [email.encode('utf-8')
+                  for email in series.values.tolist()
+                  if type(email) is not float]
 
     vector = CountVectorizer(
         analyzer='word',
@@ -77,7 +81,9 @@ def count_vectorizer(series, test=None):
         stop_words=None,
         max_features=5000,
     )
+    normalizer = Normalizer()
 
-    feature = vector.fit_transform(series) \
-        if fit_transform else vector.transform(series)
-    return feature.toarray()
+    feat_vector = vector.fit_transform(email_list) \
+        if fit_transform else vector.transform(email_list)
+
+    return normalizer.fit_transform(feat_vector).toarray()
