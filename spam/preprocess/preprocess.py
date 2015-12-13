@@ -58,3 +58,13 @@ def read_email(path, clean=True):
         file.close()
 
     return clean_text(content) if clean else content
+
+
+def count_vectorizer(series, test=None):
+    """
+    A function that transforms panda series to count vectorizer
+    If parameter `test` is True the function will only transform the
+    series but if the parameter `test` is False the function
+    will fit and transform the series.
+    """
+    pass
