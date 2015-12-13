@@ -6,6 +6,7 @@ for machine learning process.
 """
 
 import re
+import sys
 
 from nltk import tokenize
 from nltk.corpus import stopwords
@@ -47,6 +48,15 @@ def clean_text(text):
     return ' '.join(word_list)
 
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+
+@static_vars(success=0, fail=0)
 def read_email(path, clean=True):
     """
     A function that accepts file paths and return it's contents.
@@ -54,10 +64,17 @@ def read_email(path, clean=True):
     with open(path, 'r', encoding='iso-8859-1') as file:
         try:
             content = ''.join(file.readlines())
+            read_email.success += 1
         except UnicodeDecodeError:
             content = ''
+            read_email.fail += 1
 
         file.close()
+
+    sys.stdout.write('\rSuccess: {} \t Fail: {}'.format(
+        read_email.success, read_email.fail
+    ))
+    sys.stdout.flush()
 
     return clean_text(content) if clean else content
 
