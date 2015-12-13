@@ -9,6 +9,7 @@ import re
 
 from nltk import tokenize
 from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 def regex(text):
@@ -67,4 +68,16 @@ def count_vectorizer(series, test=None):
     series but if the parameter `test` is False the function
     will fit and transform the series.
     """
-    pass
+    fit_transform = True if not test else False
+
+    vector = CountVectorizer(
+        analyzer='word',
+        tokenizer=None,
+        preprocessor=None,
+        stop_words=None,
+        max_features=5000,
+    )
+
+    feature = vector.fit_transform(series) \
+        if fit_transform else vector.transform(series)
+    return feature.toarray()
