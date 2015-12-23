@@ -83,7 +83,7 @@ train_feat, test_feat = preprocess.count_vectorizer([
     train_data['email'], test_data['email']
 ])
 
-# save feature vector as .npy file
-np.save('unlabeled_feature.npy', unlabeled_feat)
-np.save('train_feature.npy', train_feat)
-np.save('test_feature.npy', test_feat)
+# save feature vector as .npz file
+np.savez('unlabeled_feature.npy', X=unlabeled_feat)
+np.savez('train_feature.npy', X=train_feat, y=train_data['class'].values)
+np.savez('test_feature.npy', X=test_feat, y=test_data['class'].values)
