@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Deep learning module.
+
+X: input
+Y: label
+y: predicted label
+"""
 
 import numpy as np
 
@@ -86,7 +93,7 @@ class DeepLearning:
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
-            ae.fit(input_data, input_data,
+            ae.fit(input_data, input_data, verbose=2,
                    batch_size=self.batch_size, nb_epoch=self.epochs)
 
             encoders.append(ae.layers[0].encoder)
@@ -105,3 +112,7 @@ class DeepLearning:
         """
         return Dense(input_dim=self.hidden_layers[-1],
                      output_dim=self.classes, activation=activation)
+
+    def evaluate(self, Y, y):
+        """ Evaluate the predicted labels and return metrics. """
+        pass
