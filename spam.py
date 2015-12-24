@@ -26,7 +26,7 @@ if not args.read:
     unlabeled_path, (train_path, train_class), \
         (test_path, test_class) = split_dataset(file_path_list, seed=1337)
 
-# generate panda dataframes and export it to csv
+    # generate panda dataframes and export it to csv
     print('Generating unlabeled dataframe..')
     unlabeled_data = pd.DataFrame(
         data={
@@ -60,9 +60,12 @@ if not args.read:
     test_data.to_csv('test_data.csv')
 else:
     print('Reading csv files..')
-    unlabeled_data = pd.read_csv('data/csv/unlabeled_data.csv', encoding='iso-8859-1')
-    train_data = pd.read_csv('data/csv/train_data.csv', encoding='iso-8859-1')
-    test_data = pd.read_csv('data/csv/test_data.csv', encoding='iso-8859-1')
+    unlabeled_data = pd.read_csv('data/csv/unlabeled_data.csv',
+                                 encoding='iso-8859-1')
+    train_data = pd.read_csv('data/csv/train_data.csv',
+                             encoding='iso-8859-1')
+    test_data = pd.read_csv('data/csv/test_data.csv',
+                            encoding='iso-8859-1')
 
 print('Generating feature vectors..')
 unlabeled_feat, _ = preprocess.count_vectorizer([unlabeled_data['email']])
@@ -72,5 +75,7 @@ train_feat, test_feat = preprocess.count_vectorizer([
 
 print('Exporting npz files inside data/npz/ ..')
 np.savez('data/npz/unlabeled_feature', X=unlabeled_feat)
-np.savez('data/npz/train_feature', X=train_feat, y=train_data['class'].values)
-np.savez('data/npz/test_feature', X=test_feat, y=test_data['class'].values)
+np.savez('data/npz/train_feature',
+         X=train_feat, Y=train_data['class'].values)
+np.savez('data/npz/test_feature',
+         X=test_feat, Y=test_data['class'].values)
