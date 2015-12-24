@@ -98,3 +98,10 @@ class DeepLearning:
             model.add(encoder)
 
         return model
+
+    def build_finetune(self, activation='softmax'):
+        """
+        Build the finetune layer for finetuning or supervise task.
+        """
+        return Dense(input_dim=self.hidden_layers[-1],
+                     output_dim=self.classes, activation=activation)
