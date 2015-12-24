@@ -3,6 +3,8 @@
 
 import numpy as np
 
+from keras.utils import np_utils
+
 
 class DeepLearning:
     """
@@ -25,10 +27,17 @@ class DeepLearning:
         unlabeled_train = np.load('unlabeled_feature.npz')['X']
 
         train_data = np.load('train_feature.npz')
-        X_train, Y_train = train_data['X'], train_data['y']
+        X_train, Y_train = train_data['X'], train_data['Y']
 
         test_data = np.load('test_feature.npz')
-        X_test, Y_test = test_data['X'], test_data['y']
+        X_test, Y_test = test_data['X'], test_data['Y']
 
-        return unlabeled_train, (X_train, Y_train), \
-                (X_test, Y_test)
+        X_train = X_train.astype('float32')
+        X_test = X_test.astype('float32')
+
+        Y_train = np_utils.to_categorical(Y_train, self.classes)
+        Y_test = np_utils.to_categorical(Y_test, self.classes)
+
+        return {'unlabeled_data': unlabeled_train,
+                'train_data': (X_train, Y_train),
+                'test_data': (X_test, Y_test), }
