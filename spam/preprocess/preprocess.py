@@ -10,6 +10,7 @@ import sys
 
 from nltk import tokenize
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import Normalizer
 
@@ -34,9 +35,11 @@ def tokenizer(text):
 
 def remove_stopwords(word_list):
     """
-    A function that remove stopwords from a list of words.
+    A function that remove stopwords from a list of words
+    and lemmatize it.
     """
-    return [word for word in word_list
+    lemma = WordNetLemmatizer()
+    return [lemma.lemmatize(word) for word in word_list
             if word not in stopwords.words('english')]
 
 
