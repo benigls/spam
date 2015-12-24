@@ -17,12 +17,12 @@ from keras.layers.noise import GaussianNoise
 from keras.utils import np_utils
 
 
-class DeepLearning:
+class StackedDenoisingAutoEncoder:
     """
     Class for deel learning methods.
     """
     def __init__(self, **kwargs):
-        self.dataset = self._get_dataset()
+        self.dataset = self.get_dataset()
         self.epochs = kwargs.pop('epochs', 0)
         self.batch_size = kwargs.pop('batch_size', 0)
         self.classes = kwargs.pop('classes', 1)
@@ -33,7 +33,7 @@ class DeepLearning:
         for key in kwargs.keys():
             print('Argument {} doesn\'t recognize.'.format(key))
 
-    def _get_dataset(self):
+    def get_dataset(self):
         """ Get dataset and unpack it. """
         unlabeled_train = np.load('unlabeled_feature.npz')['X']
 
@@ -58,7 +58,8 @@ class DeepLearning:
         layer wise pre-training.
         """
         encoders = []
-        input_data = np.copy(self._get_dataset()['unlabeled_data'])
+
+        input_data = np.copy(self.dataset['unlabeled_data'])
 
         for i, (n_in, n_out) in enumerate(zip(
                 self.hidden_layers[:-1], self.hidden_layers[1:]),
@@ -116,3 +117,38 @@ class DeepLearning:
     def evaluate(self, Y, y):
         """ Evaluate the predicted labels and return metrics. """
         pass
+
+if __name__ == '__main__':
+    sda = StackedDenoisingAutoEncoder(
+        batch_size=128, classes=2, epochs=0, n_folds=4,
+        hidden_layers=[2500, 1700, 1000, 300, ],
+        noise_layers=[0.3, 0.2, 0.1, ],
+    )
+
+    print('Building model..')
+    model = sda.build_sda()
+
+    model.add(sda.build_finetune())
+    X_train, Y_train = sda.dataset['train_data']
+    X_test, Y_test = sda.dataset['train_data']
+
+    print('Finetuning the model..')
+    model.fit(
+        X_train, Y_train, batch_size=sda.batch_size,
+        nb_epoch=sda.epochs, show_accuracy=True,
+        validation_data=(X_test, Y_test), validation_split=0.1,
+    )
+
+    print('Evaluating model..')
+    score = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
+
+    print('Test score: {}'.format(score[0]))
+    print('Test accuracy: {}'.format(score[1]))
+
+    print('Saving model structure and weights..')
+    open('spam_ms_epochs_{}.json'.format(sda.epochs), 'w') \
+        .write(model.to_json())
+    model.save_weights('spam_mw_epochs_{}.hdf5'
+                       .format(sda.epochs), overwrite=True)
+
+    print('Done!')
