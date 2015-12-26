@@ -14,33 +14,41 @@ from keras.models import Sequential
 from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
+from keras.optimizers import SGD
 from keras.utils import np_utils
 
 
+class IllegalArgumentError(ValueError):
+    pass
+
+
 class StackedDenoisingAutoEncoder:
-    """
-    Class for deel learning methods.
-    """
+    """ Class for deel learning methods. """
     def __init__(self, **kwargs):
-        self.dataset = self.get_dataset()
         self.epochs = kwargs.pop('epochs', 0)
         self.batch_size = kwargs.pop('batch_size', 0)
         self.classes = kwargs.pop('classes', 1)
         self.hidden_layers = kwargs.pop('hidden_layers', None)
         self.noise_layers = kwargs.pop('noise_layers', None)
         self.n_folds = kwargs.pop('n_folds', 1)
+        self.dataset = self.get_dataset()
 
-        for key in kwargs.keys():
-            print('Argument {} doesn\'t recognize.'.format(key))
+        for key, item in kwargs.items():
+            raise IllegalArgumentError(
+                'Keyword argument {} with a value of  {}, '
+                'doesn\'t recognize.'.format(key, item))
 
     def get_dataset(self):
         """ Get dataset and unpack it. """
-        unlabeled_train = np.load('unlabeled_feature.npz')['X']
+        prefix = 'data/npz/'
 
-        train_data = np.load('train_feature.npz')
+        unlabeled_train = np.load('{}unlabeled_feature.npz'
+                                  .format(prefix))['X']
+
+        train_data = np.load('{}train_feature.npz'.format(prefix))
         X_train, Y_train = train_data['X'], train_data['Y']
 
-        test_data = np.load('test_feature.npz')
+        test_data = np.load('{}test_feature.npz'.format(prefix))
         X_test, Y_test = test_data['X'], test_data['Y']
 
         X_train = X_train.astype('float32')
@@ -54,7 +62,7 @@ class StackedDenoisingAutoEncoder:
                 'test_data': (X_test, Y_test), }
 
     def build_sda(self):
-        """ Build  Stack Denoising Autoencoder and perform a
+        """ Build Stack Denoising Autoencoder and perform a
         layer wise pre-training.
         """
         encoders = []
@@ -89,8 +97,8 @@ class StackedDenoisingAutoEncoder:
                 encoder=encoder, decoder=decoder,
                 output_reconstruction=False,
             ))
-
-            ae.compile(loss='mean_squared_error', optimizer='rms')
+            sgd = SGD()
+            ae.compile(loss='mean_squared_error', optimizer=sgd)
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
@@ -108,8 +116,8 @@ class StackedDenoisingAutoEncoder:
         return model
 
     def build_finetune(self, activation='softmax'):
-        """
-        Build the finetune layer for finetuning or supervise task.
+        """ Build the finetune layer for finetuning or
+        supervise task.
         """
         return Dense(input_dim=self.hidden_layers[-1],
                      output_dim=self.classes, activation=activation)
@@ -117,38 +125,3 @@ class StackedDenoisingAutoEncoder:
     def evaluate(self, Y, y):
         """ Evaluate the predicted labels and return metrics. """
         pass
-
-if __name__ == '__main__':
-    sda = StackedDenoisingAutoEncoder(
-        batch_size=128, classes=2, epochs=0, n_folds=4,
-        hidden_layers=[2500, 1700, 1000, 300, ],
-        noise_layers=[0.3, 0.2, 0.1, ],
-    )
-
-    print('Building model..')
-    model = sda.build_sda()
-
-    model.add(sda.build_finetune())
-    X_train, Y_train = sda.dataset['train_data']
-    X_test, Y_test = sda.dataset['train_data']
-
-    print('Finetuning the model..')
-    model.fit(
-        X_train, Y_train, batch_size=sda.batch_size,
-        nb_epoch=sda.epochs, show_accuracy=True,
-        validation_data=(X_test, Y_test), validation_split=0.1,
-    )
-
-    print('Evaluating model..')
-    score = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
-
-    print('Test score: {}'.format(score[0]))
-    print('Test accuracy: {}'.format(score[1]))
-
-    print('Saving model structure and weights..')
-    open('spam_ms_epochs_{}.json'.format(sda.epochs), 'w') \
-        .write(model.to_json())
-    model.save_weights('spam_mw_epochs_{}.hdf5'
-                       .format(sda.epochs), overwrite=True)
-
-    print('Done!')
