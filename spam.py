@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import argparse
 
 import numpy as np
@@ -117,9 +118,12 @@ if args.model or args.all:
     print('Test accuracy: {}'.format(score[1]))
 
     print('Saving model structure and weights..')
-    open('spam_ms_epochs_{}.json'.format(sda.epochs), 'w') \
-        .write(model.to_json())
-    model.save_weights('spam_mw_epochs_{}.hdf5'
+    # TODO: Handle exceptions
+    # TODO: Update folder names
+    os.mkdir('experiments/{}_epochs'.format(sda.epochs))
+    open('experiments/{}_epochs/model_structure.json'
+         .format(sda.epochs), 'w').write(model.to_json())
+    model.save_weights('experiments/{}_epochs/model_weights.hdf5'
                        .format(sda.epochs), overwrite=True)
 
     print('Done!')
