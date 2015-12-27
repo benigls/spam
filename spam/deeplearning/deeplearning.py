@@ -102,7 +102,7 @@ class StackedDenoisingAutoEncoder:
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
-            ae.fit(input_data, input_data, verbose=2,
+            ae.fit(input_data, input_data,
                    batch_size=self.batch_size, nb_epoch=self.epochs)
 
             encoders.append(ae.layers[0].encoder)
