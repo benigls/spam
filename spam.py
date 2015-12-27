@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
+from keras.optimizers import SGD
 from spam.common import DATASET_META
 from spam.common.utils import get_file_path_list, split_dataset
 from spam.preprocess import preprocess
@@ -17,12 +18,13 @@ HAM = 0
 SPAM = 1
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-a', '--all', action='store_true')
 parser.add_argument('-c', '--csv', action='store_true')
 parser.add_argument('-n', '--npz', action='store_true')
 parser.add_argument('-m', '--model', action='store_true')
 args = parser.parse_args()
 
-if args.csv:
+if args.csv or args.all:
     file_path_list = get_file_path_list(DATASET_META)
 
     print('Spliting the dataset..')
@@ -39,7 +41,7 @@ if args.csv:
         columns=['email', 'class'],
     )
 
-    print('Generating train dataframe..')
+    print('\nGenerating train dataframe..')
     train_data = pd.DataFrame(
         data={
             'email': [preprocess.read_email(path) for path in train_path],
@@ -48,7 +50,7 @@ if args.csv:
         columns=['email', 'class'],
     )
 
-    print('Generating test dataframe..')
+    print('\nGenerating test dataframe..')
     test_data = pd.DataFrame(
         data={
             'email': [preprocess.read_email(path) for path in test_path],
@@ -57,12 +59,12 @@ if args.csv:
         columns=['email', 'class'],
     )
 
-    print('Exporting dataframes into a csv files inside data/csv/ ..')
-    unlabeled_data.to_csv('unlabeled_data.csv')
-    train_data.to_csv('train_data.csv')
-    test_data.to_csv('test_data.csv')
+    print('\nExporting dataframes into a csv files inside data/csv/ ..')
+    unlabeled_data.to_csv('data/csv/unlabeled_data.csv')
+    train_data.to_csv('data/csv/train_data.csv')
+    test_data.to_csv('data/csv/test_data.csv')
 
-if args.npz:
+if args.npz or args.all:
     print('Reading csv files..')
     unlabeled_data = pd.read_csv('data/csv/unlabeled_data.csv',
                                  encoding='iso-8859-1')
@@ -84,16 +86,20 @@ if args.npz:
     np.savez('data/npz/test_feature',
              X=test_feat, Y=test_data['class'].values)
 
-if args.model:
+if args.model or args.all:
     print('Building model..')
     sda = StackedDenoisingAutoEncoder(
         batch_size=128, classes=2, epochs=0, n_folds=4,
-        hidden_layers=[2500, 1700, 1000, 300, ],
+        hidden_layers=[5000, 3500, 2000, 500, ],
         noise_layers=[0.3, 0.2, 0.1, ],
     )
     model = sda.build_sda()
 
     model.add(sda.build_finetune())
+
+    sgd = SGD()
+    model.compile(loss='categorical_crossentropy', optimizer=sgd)
+
     X_train, Y_train = sda.dataset['train_data']
     X_test, Y_test = sda.dataset['train_data']
 
