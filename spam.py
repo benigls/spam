@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import os
 import argparse
+import json
 
 import numpy as np
 import pandas as pd
@@ -14,18 +16,33 @@ from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
 
 
+def parse_config():
+    """ Parses the args and return the config file in json. """
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-c', '--config', action='store')
+        args = parser.parse_args()
+
+        with open(args.config, 'r') as f:
+            config = json.load(f)
+
+        return config
+    except Exception as e:
+        print('Error: {}'.format(e))
+        return None
+
+
+CONFIG = parse_config()
+if not CONFIG:
+    sys.exit()
+
 UNLABEL = -1
 HAM = 0
 SPAM = 1
+NPZ_DEST = CONFIG['npz']['dest']
+CSV_DEST = CONFIG['csv']['dest']
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-a', '--all', action='store_true')
-parser.add_argument('-c', '--csv', action='store_true')
-parser.add_argument('-n', '--npz', action='store_true')
-parser.add_argument('-m', '--model', action='store_true')
-args = parser.parse_args()
-
-if args.csv or args.all:
+if CONFIG['csv']['generate']:
     file_path_list = get_file_path_list(DATASET_META)
 
     print('Spliting the dataset..')
@@ -60,18 +77,22 @@ if args.csv or args.all:
         columns=['email', 'class'],
     )
 
-    print('\nExporting dataframes into a csv files inside data/csv/ ..')
-    unlabeled_data.to_csv('data/csv/unlabeled_data.csv')
-    train_data.to_csv('data/csv/train_data.csv')
-    test_data.to_csv('data/csv/test_data.csv')
+    print('\nExporting dataframes into a csv files inside {} ..'
+          .format(CSV_DEST))
+    unlabeled_data.to_csv('{}/unlabeled_data.csv'.format(CSV_DEST))
+    train_data.to_csv('{}/train_data.csv'.format(CSV_DEST))
+    test_data.to_csv('{}/test_data.csv'.format(CSV_DEST))
 
-if args.npz or args.all:
+if CONFIG['npz']['generate']:
     print('Reading csv files..')
-    unlabeled_data = pd.read_csv('data/csv/unlabeled_data.csv',
+    unlabeled_data = pd.read_csv('{}/unlabeled_data.csv'
+                                 .format(NPZ_DEST),
                                  encoding='iso-8859-1')
-    train_data = pd.read_csv('data/csv/train_data.csv',
+    train_data = pd.read_csv('{}/train_data.csv'
+                             .format(NPZ_DEST),
                              encoding='iso-8859-1')
-    test_data = pd.read_csv('data/csv/test_data.csv',
+    test_data = pd.read_csv('{}/test_data.csv'
+                            .format(NPZ_DEST),
                             encoding='iso-8859-1')
 
     print('Generating feature vectors..')
@@ -80,50 +101,56 @@ if args.npz or args.all:
         train_data['email'], test_data['email']
     ])
 
-    print('Exporting npz files inside data/npz/ ..')
-    np.savez('data/npz/unlabeled_feature', X=unlabeled_feat)
-    np.savez('data/npz/train_feature',
+    print('Exporting npz files inside {}..'.format(NPZ_DEST))
+    np.savez('{}/unlabeled_feature'.format(NPZ_DEST),
+             X=unlabeled_feat)
+    np.savez('{}/train_feature'.format(NPZ_DEST),
              X=train_feat, Y=train_data['class'].values)
-    np.savez('data/npz/test_feature',
+    np.savez('{}/test_feature'.format(NPZ_DEST),
              X=test_feat, Y=test_data['class'].values)
 
-if args.model or args.all:
-    print('Building model..')
-    sda = StackedDenoisingAutoEncoder(
-        batch_size=128, classes=2, epochs=0, n_folds=4,
-        hidden_layers=[5000, 3500, 2000, 500, ],
-        noise_layers=[0.3, 0.2, 0.1, ],
-    )
-    model = sda.build_sda()
+print('Building model..')
+sda = StackedDenoisingAutoEncoder(
+    batch_size=CONFIG['model']['batch_size'],
+    classes=CONFIG['model']['classes'],
+    epochs=CONFIG['model']['epochs'],
+    n_folds=CONFIG['model']['n_folds'],
+    hidden_layers=CONFIG['model']['hidden_layers'],
+    noise_layers=CONFIG['model']['noise_layers'],
+)
+model = sda.build_sda()
 
-    model.add(sda.build_finetune())
+model.add(sda.build_finetune())
 
-    sgd = SGD()
-    model.compile(loss='categorical_crossentropy', optimizer=sgd)
+sgd = SGD()
+model.compile(loss='categorical_crossentropy', optimizer=sgd)
 
-    X_train, Y_train = sda.dataset['train_data']
-    X_test, Y_test = sda.dataset['train_data']
+X_train, Y_train = sda.dataset['train_data']
+X_test, Y_test = sda.dataset['train_data']
 
-    print('Finetuning the model..')
-    model.fit(
-        X_train, Y_train, batch_size=sda.batch_size,
-        nb_epoch=sda.epochs, show_accuracy=True,
-        validation_data=(X_test, Y_test), validation_split=0.1,
-    )
+print('Finetuning the model..')
+model.fit(
+    X_train, Y_train, batch_size=sda.batch_size,
+    nb_epoch=sda.epochs, show_accuracy=True,
+    validation_data=(X_test, Y_test), validation_split=0.1,
+)
 
-    print('Evaluating model..')
-    score = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
+print('Evaluating model..')
+score = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
 
-    print('Test score: {}'.format(score[0]))
-    print('Test accuracy: {}'.format(score[1]))
+print('Test score: {}'.format(score[0]))
+print('Test accuracy: {}'.format(score[1]))
 
-    print('Saving model structure and weights..')
-    # TODO: Handle exceptions
-    # TODO: Update folder names
-    os.mkdir('experiments/{}_epochs'.format(sda.epochs))
-    open('experiments/{}_epochs/model_structure.json'
-         .format(sda.epochs), 'w').write(model.to_json())
-    model.save_weights('experiments/{}_epochs/model_weights.hdf5'
-                       .format(sda.epochs), overwrite=True)
+print('Saving config inside experiments/{}_exp/ ..'.format(CONFIG['id']))
+exp_dir = 'experiments/{}_exp'.format(CONFIG['id'])
+os.makedirs(exp_dir, exist_ok=True)
 
-    print('Done!')
+open('{}/model_structure.json'.format(CONFIG['id']), 'w') \
+    .write(model.to_json())
+model.save_weights('{}/model_weights.hdf5'
+                   .format(exp_dir), overwrite=True)
+
+with open('{}/config.json'.format(exp_dir), 'w') as f:
+    json.dump(CONFIG, f)
+
+print('Done!')
