@@ -8,6 +8,7 @@ import json
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
 from keras.optimizers import SGD
 from spam.common import DATASET_META
@@ -122,30 +123,38 @@ model = sda.build_sda()
 
 model.add(sda.build_finetune())
 
-sgd = SGD()
-model.compile(loss='categorical_crossentropy', optimizer=sgd)
+model.compile(loss='categorical_crossentropy',
+              optimizer=SGD())
 
 X_train, Y_train = sda.dataset['train_data']
-X_test, Y_test = sda.dataset['train_data']
+X_test, Y_test, Y_true = sda.dataset['train_data']
 
 print('Finetuning the model..')
-model.fit(
+history = model.fit(
     X_train, Y_train, batch_size=sda.batch_size,
     nb_epoch=sda.epochs, show_accuracy=True,
     validation_data=(X_test, Y_test), validation_split=0.1,
 )
 
 print('Evaluating model..')
-score = model.evaluate(X_test, Y_test, show_accuracy=True, verbose=0)
+y_pred = model.predict_classes(X_test)
+print(Y_test[:5])
+print(y_pred[:5])
+accuracy = accuracy_score(Y_true, y_pred)
+precision, recall, f1_score, _ = \
+    precision_recall_fscore_support(Y_test, y_pred)
 
-print('Test score: {}'.format(score[0]))
-print('Test accuracy: {}'.format(score[1]))
+print('Accuracy: {}'.format(accuracy))
+print('Precision: {}'.format(precision))
+print('Recall: {}'.format(recall))
+print('F1 score: {}'.format(f1_score))
 
-print('Saving config inside experiments/{}_exp/ ..'.format(CONFIG['id']))
-exp_dir = 'experiments/{}_exp'.format(CONFIG['id'])
+print('Saving config results inside experiments/{}_exp/ ..'
+      .format(CONFIG['id']))
+exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
 os.makedirs(exp_dir, exist_ok=True)
 
-open('{}/model_structure.json'.format(CONFIG['id']), 'w') \
+open('{}/model_structure.json'.format(exp_dir), 'w') \
     .write(model.to_json())
 model.save_weights('{}/model_weights.hdf5'
                    .format(exp_dir), overwrite=True)

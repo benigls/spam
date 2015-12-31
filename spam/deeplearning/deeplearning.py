@@ -55,11 +55,12 @@ class StackedDenoisingAutoEncoder:
         X_test = X_test.astype('float32')
 
         Y_train = np_utils.to_categorical(Y_train, self.classes)
+        Y_true = list(Y_test)
         Y_test = np_utils.to_categorical(Y_test, self.classes)
 
         return {'unlabeled_data': unlabeled_train,
                 'train_data': (X_train, Y_train),
-                'test_data': (X_test, Y_test), }
+                'test_data': (X_test, Y_test, Y_true), }
 
     def build_sda(self):
         """ Build Stack Denoising Autoencoder and perform a
