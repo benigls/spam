@@ -5,11 +5,12 @@ import os
 
 from sklearn.cross_validation import train_test_split
 
+from spam.preprocess import preprocess
+
 
 def get_file_path_list(dataset_meta):
-    """
-    A helper function that accepts the path of enron dataset and
-    return all the email file paths with class.
+    """ A helper function that accepts the path of enron dataset
+    and return all the email file paths with class.
     """
     email_file_path_list = []
 
@@ -57,4 +58,26 @@ def split_dataset(file_path_list, seed=0):
         )
 
     return unlabeled_path, (train_path, train_class), \
-            (test_path, test_class)
+        (test_path, test_class)
+
+
+def df_params(paths, labels):
+    """ Returns a dict as a parameter for the dataframe. """
+    unlabel, ham, spam = -1, 0, 1
+    data = {'email': [], 'class': [], }
+    columns = ['email', 'class']
+
+    for path, label in zip(paths, labels):
+        email = preprocess.read_email(path)
+        if email == '':
+            continue
+
+        data['email'].append(email)
+        if label == 'spam':
+            data['class'] = spam
+        elif label == 'ham':
+            data['class'] = ham
+        else:
+            data['class'] = unlabel
+
+    return {'data': data, 'columns': columns, }
