@@ -55,7 +55,7 @@ class StackedDenoisingAutoEncoder:
         X_test = X_test.astype('float32')
 
         Y_train = np_utils.to_categorical(Y_train, self.classes)
-        Y_true = list(Y_test)
+        Y_true = np.asarray(Y_test, dtype='int32')
         Y_test = np_utils.to_categorical(Y_test, self.classes)
 
         return {'unlabeled_data': unlabeled_train,
