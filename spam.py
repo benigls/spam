@@ -8,11 +8,12 @@ import json
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
-
+from sklearn.metrics import (precision_score, recall_score,
+                             f1_score, accuracy_score, )
 from keras.optimizers import SGD
 from spam.common import DATASET_META
-from spam.common.utils import get_file_path_list, split_dataset
+from spam.common.utils import (get_file_path_list, split_dataset,
+                               df_params, )
 from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
 
@@ -37,9 +38,6 @@ CONFIG = parse_config()
 if not CONFIG:
     sys.exit()
 
-UNLABEL = -1
-HAM = 0
-SPAM = 1
 NPZ_DEST = CONFIG['npz']['dest']
 CSV_DEST = CONFIG['csv']['dest']
 
@@ -52,31 +50,17 @@ if CONFIG['csv']['generate']:
 
     # generate panda dataframes and export it to csv
     print('Generating unlabeled dataframe..')
-    unlabeled_data = pd.DataFrame(
-        data={
-            'email': [preprocess.read_email(path) for path in unlabeled_path],
-            'class': [UNLABEL for _ in range(len(unlabeled_path))]
-        },
-        columns=['email', 'class'],
-    )
+    unlabeled_data = pd.DataFrame(**df_params(
+        paths=unlabeled_path,
+        labels=[None for _ in range(len(unlabeled_path))]))
 
     print('\nGenerating train dataframe..')
-    train_data = pd.DataFrame(
-        data={
-            'email': [preprocess.read_email(path) for path in train_path],
-            'class': [SPAM if cl == 'spam' else HAM for cl in train_class]
-        },
-        columns=['email', 'class'],
-    )
+    train_data = pd.DataFrame(**df_params(
+        paths=train_path, labels=train_class))
 
     print('\nGenerating test dataframe..')
-    test_data = pd.DataFrame(
-        data={
-            'email': [preprocess.read_email(path) for path in test_path],
-            'class': [SPAM if cl == 'spam' else HAM for cl in test_class]
-        },
-        columns=['email', 'class'],
-    )
+    test_data = pd.DataFrame(**df_params(
+        paths=test_path, labels=test_class))
 
     print('\nExporting dataframes into a csv files inside {} ..'
           .format(CSV_DEST))
@@ -87,13 +71,13 @@ if CONFIG['csv']['generate']:
 if CONFIG['npz']['generate']:
     print('Reading csv files..')
     unlabeled_data = pd.read_csv('{}/unlabeled_data.csv'
-                                 .format(NPZ_DEST),
+                                 .format(CSV_DEST),
                                  encoding='iso-8859-1')
     train_data = pd.read_csv('{}/train_data.csv'
-                             .format(NPZ_DEST),
+                             .format(CSV_DEST),
                              encoding='iso-8859-1')
     test_data = pd.read_csv('{}/test_data.csv'
-                            .format(NPZ_DEST),
+                            .format(CSV_DEST),
                             encoding='iso-8859-1')
 
     print('Generating feature vectors..')
@@ -127,7 +111,7 @@ model.compile(loss='categorical_crossentropy',
               optimizer=SGD())
 
 X_train, Y_train = sda.dataset['train_data']
-X_test, Y_test, Y_true = sda.dataset['train_data']
+X_test, Y_test, Y_true = sda.dataset['test_data']
 
 print('Finetuning the model..')
 history = model.fit(
@@ -138,16 +122,22 @@ history = model.fit(
 
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
-print(Y_test[:5])
-print(y_pred[:5])
+
 accuracy = accuracy_score(Y_true, y_pred)
-precision, recall, f1_score, _ = \
-    precision_recall_fscore_support(Y_test, y_pred)
+precision = precision_score(Y_true, y_pred)
+recall = recall_score(Y_true, y_pred)
+f1 = f1_score(Y_true, y_pred)
+
+score = model.evaluate(X_test, Y_test, batch_size=128,
+                       show_accuracy=True, verbose=1)
+
+print('Test score: {}'.format(score[0]))
+print('Test accuracy: {}'.format(score[1]))
 
 print('Accuracy: {}'.format(accuracy))
 print('Precision: {}'.format(precision))
 print('Recall: {}'.format(recall))
-print('F1 score: {}'.format(f1_score))
+print('F1: {}'.format(f1))
 
 print('Saving config results inside experiments/{}_exp/ ..'
       .format(CONFIG['id']))
