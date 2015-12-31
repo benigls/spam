@@ -2,11 +2,11 @@
     "id": 100,
     "csv": {
         "generate": false,
-        "dest": "/data/csv"
+        "dest": "data/csv"
     },
     "npz": {
         "generate": false,
-        "dest": "/data/npz"
+        "dest": "data/npz"
     },
     "dataset": [
         {
