@@ -14,7 +14,6 @@ from keras.models import Sequential
 from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
-from keras.optimizers import SGD
 from keras.utils import np_utils
 
 
@@ -98,8 +97,7 @@ class StackedDenoisingAutoEncoder:
                 encoder=encoder, decoder=decoder,
                 output_reconstruction=False,
             ))
-            sgd = SGD()
-            ae.compile(loss='mean_squared_error', optimizer=sgd)
+            ae.compile(loss='mean_squared_error', optimizer='sgd')
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
