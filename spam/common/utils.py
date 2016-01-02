@@ -74,10 +74,10 @@ def df_params(paths, labels):
 
         data['email'].append(email)
         if label == 'spam':
-            data['class'] = spam
+            data['class'].append(spam)
         elif label == 'ham':
-            data['class'] = ham
+            data['class'].append(ham)
         else:
-            data['class'] = unlabel
+            data['class'].append(unlabel)
 
     return {'data': data, 'columns': columns, }
