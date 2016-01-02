@@ -29,13 +29,13 @@ def parse_config():
         with open(args.config, 'r') as f:
             config = json.load(f)
 
-        return config
+        return config, args.config
     except Exception as e:
         print('Error: {}'.format(e))
-        return None
+        return None, None
 
 
-CONFIG = parse_config()
+CONFIG, CONFIG_FILENAME = parse_config()
 if not CONFIG:
     sys.exit()
 
@@ -45,6 +45,7 @@ CSV_DEST = CONFIG['csv']['dest']
 if CONFIG['csv']['generate']:
     file_path_list = get_file_path_list(dataset_meta(CONFIG['dataset']))
 
+    print('\n{}\n'.format('-' * 50))
     print('Spliting the dataset..')
     unlabeled_path, (train_path, train_class), \
         (test_path, test_class) = split_dataset(file_path_list, seed=1337)
@@ -70,6 +71,7 @@ if CONFIG['csv']['generate']:
     test_data.to_csv('{}/test_data.csv'.format(CSV_DEST))
 
 if CONFIG['npz']['generate']:
+    print('\n{}\n'.format('-' * 50))
     print('Reading csv files..')
     unlabeled_data = pd.read_csv('{}/unlabeled_data.csv'
                                  .format(CSV_DEST),
@@ -98,6 +100,7 @@ if CONFIG['npz']['generate']:
     np.savez('{}/test_feature'.format(NPZ_DEST),
              X=test_feat, Y=test_data['class'].values)
 
+print('\n{}\n'.format('-' * 50))
 print('Building model..')
 sda = StackedDenoisingAutoEncoder(
     batch_size=CONFIG['model']['batch_size'],
@@ -116,6 +119,7 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 X_train, Y_train = sda.dataset['train_data']
 X_test, Y_test, Y_true = sda.dataset['test_data']
 
+print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
 history = model.fit(
     X_train, Y_train, batch_size=sda.batch_size,
@@ -123,6 +127,7 @@ history = model.fit(
     validation_data=(X_test, Y_test), validation_split=0.1,
 )
 
+print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
@@ -154,6 +159,7 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
 
+print('\n{}\n'.format('-' * 50))
 print('Saving config results inside experiments/{}_exp/ ..'
       .format(CONFIG['id']))
 exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
@@ -168,5 +174,11 @@ with open('{}/config.json'.format(exp_dir), 'w') as f:
     json.dump(CONFIG, f)
 
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
+
+print('Updating config id..')
+CONFIG['id'] += 1
+
+with open(CONFIG_FILENAME, 'w+') as f:
+    json.dump(CONFIG, f)
 
 print('Done!')
