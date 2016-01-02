@@ -8,6 +8,28 @@ from sklearn.cross_validation import train_test_split
 from spam.preprocess import preprocess
 
 
+def dataset_meta(dataset_config):
+    """ Add paths to dataset config.
+    add the path of enron_dataset subdirs ham and spam
+    e.g. enron_dataset/enron1/spam/ = `spam_path`
+         enron_dataset/enron3/ham/ = `ham_path`
+         enron_dataset/enron6/ = `path`
+    """
+    dataset = dict(dataset_config)
+    for i, subdir in enumerate(dataset_config['subdirs']):
+        dataset['subdirs'][i]['path'] = os.path.join(
+            dataset['path'], subdir['name']
+        )
+        dataset['subdirs'][i]['ham_path'] = os.path.join(
+            subdir['path'], 'ham'
+        )
+        dataset['subdirs'][i]['spam_path'] = os.path.join(
+            subdir['path'], 'spam'
+        )
+
+    return dataset
+
+
 def get_file_path_list(dataset_meta):
     """ A helper function that accepts the path of enron dataset
     and return all the email file paths with class.
