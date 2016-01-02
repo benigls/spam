@@ -82,7 +82,7 @@ def read_email(path, clean=True):
     return clean_text(content) if clean else content
 
 
-def count_vectorizer(dataset):
+def count_vectorizer(dataset, max_features=5000):
     """
     A function that transforms panda series to count vectorizer
     If parameter `test` is True the function will only transform the
@@ -94,14 +94,14 @@ def count_vectorizer(dataset):
                        if type(email) is not float]
 
     train_list = clean(dataset[0])
-    test_list = clean(dataset[1]) if len(dataset) == 2 else None
+    test_list = clean(dataset[1])
 
     vector = CountVectorizer(
         analyzer='word',
         tokenizer=None,
         preprocessor=None,
         stop_words=None,
-        max_features=5000,
+        max_features=max_features,
     )
     normalizer = Normalizer()
 
@@ -110,6 +110,6 @@ def count_vectorizer(dataset):
     ).toarray()
     test_vector = normalizer.fit_transform(
         vector.transform(test_list)
-    ).toarray() if len(dataset) == 2 else None
+    ).toarray() if not dataset else None
 
     return train_vector, test_vector
