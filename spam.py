@@ -8,12 +8,13 @@ import json
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.metrics import (precision_score, recall_score,
-                             f1_score, accuracy_score, )
-from keras.optimizers import SGD
-from spam.common import DATASET_META
+                             f1_score, accuracy_score, roc_curve,
+                             auc)
 from spam.common.utils import (get_file_path_list, split_dataset,
-                               df_params, )
+                               df_params, dataset_meta)
+
 from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
 
@@ -42,7 +43,7 @@ NPZ_DEST = CONFIG['npz']['dest']
 CSV_DEST = CONFIG['csv']['dest']
 
 if CONFIG['csv']['generate']:
-    file_path_list = get_file_path_list(DATASET_META)
+    file_path_list = get_file_path_list(dataset_meta(CONFIG['dataset']))
 
     print('Spliting the dataset..')
     unlabeled_path, (train_path, train_class), \
@@ -81,7 +82,10 @@ if CONFIG['npz']['generate']:
                             encoding='iso-8859-1')
 
     print('Generating feature vectors..')
-    unlabeled_feat, _ = preprocess.count_vectorizer([unlabeled_data['email']])
+    unlabeled_feat, _ = preprocess.count_vectorizer(
+        [unlabeled_data['email'], None],
+        max_features=CONFIG['max_features']
+    )
     train_feat, test_feat = preprocess.count_vectorizer([
         train_data['email'], test_data['email']
     ])
@@ -107,8 +111,7 @@ model = sda.build_sda()
 
 model.add(sda.build_finetune())
 
-model.compile(loss='categorical_crossentropy',
-              optimizer=SGD())
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
 X_train, Y_train = sda.dataset['train_data']
 X_test, Y_test, Y_true = sda.dataset['test_data']
@@ -128,16 +131,28 @@ precision = precision_score(Y_true, y_pred)
 recall = recall_score(Y_true, y_pred)
 f1 = f1_score(Y_true, y_pred)
 
-score = model.evaluate(X_test, Y_test, batch_size=128,
-                       show_accuracy=True, verbose=1)
+false_positive_rate, true_positive_rate, _ = \
+    roc_curve(Y_true, y_pred)
+roc_auc = auc(false_positive_rate, true_positive_rate)
 
-print('Test score: {}'.format(score[0]))
-print('Test accuracy: {}'.format(score[1]))
+print(y_pred)
+print(Y_true)
 
 print('Accuracy: {}'.format(accuracy))
 print('Precision: {}'.format(precision))
 print('Recall: {}'.format(recall))
 print('F1: {}'.format(f1))
+
+plt.title('Receiver Operating Characteristic')
+plt.plot(false_positive_rate, true_positive_rate, 'b',
+         label='AUC = {}'.format(roc_auc))
+plt.legend(loc='lower right')
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([-0.1, 1.2])
+plt.ylim([-0.1, 1.2])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
 
 print('Saving config results inside experiments/{}_exp/ ..'
       .format(CONFIG['id']))
@@ -151,5 +166,7 @@ model.save_weights('{}/model_weights.hdf5'
 
 with open('{}/config.json'.format(exp_dir), 'w') as f:
     json.dump(CONFIG, f)
+
+plt.savefig('{}/roc_curve.png'.format(exp_dir))
 
 print('Done!')
