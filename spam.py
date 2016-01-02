@@ -86,11 +86,12 @@ if CONFIG['npz']['generate']:
     print('Generating feature vectors..')
     unlabeled_feat, _ = preprocess.count_vectorizer(
         [unlabeled_data['email'], None],
-        max_features=CONFIG['max_features']
+        max_features=CONFIG['preprocess']['max_features'],
     )
-    train_feat, test_feat = preprocess.count_vectorizer([
-        train_data['email'], test_data['email']
-    ])
+    train_feat, test_feat = preprocess.count_vectorizer(
+        [train_data['email'], test_data['email']],
+        max_features=CONFIG['preprocess']['max_features'],
+    )
 
     print('Exporting npz files inside {}..'.format(NPZ_DEST))
     np.savez('{}/unlabeled_feature'.format(NPZ_DEST),
