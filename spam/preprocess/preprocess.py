@@ -13,6 +13,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import Normalizer
+from sklearn.decomposition import TruncatedSVD
 
 
 def regex(text):
@@ -82,11 +83,9 @@ def read_email(path, clean=True):
     return clean_text(content) if clean else content
 
 
-def count_vectorizer(dataset, max_features=5000):
-    """ A function that transforms panda series to count vectorizer
-    If parameter `test` is True the function will only transform the
-    series but if the parameter `test` is False the function
-    will fit and transform the series.
+def count_vectorizer(dataset, n_components=100, n_iter=5):
+    """ Transforms panda series to count vectorizer and apply
+    a truncated svd to minize the feature vector.
     """
     clean = lambda x: [email.encode('utf-8')
                        for email in x.values.tolist()
@@ -100,15 +99,19 @@ def count_vectorizer(dataset, max_features=5000):
         tokenizer=None,
         preprocessor=None,
         stop_words=None,
-        max_features=max_features,
+        max_features=5000,
     )
     normalizer = Normalizer()
+    svd = TruncatedSVD(n_components=n_components, n_iter=n_iter,
+                       random_state=1337, )
 
-    train_vector = normalizer.fit_transform(
-        vector.fit_transform(train_list)
-    ).toarray()
-    test_vector = normalizer.fit_transform(
-        vector.transform(test_list)
-    ).toarray() if test_list else None
+    train_vector = vector.fit_transform(train_list).astype('float64')
+    train_vector = normalizer.fit_transform(train_vector).toarray()
+    train_vector = svd.fit_transform(train_vector)
+
+    if test_list:
+        test_vector = vector.transform(test_list).astype('float64')
+        test_vector = normalizer.transform(test_vector).toarray()
+        test_vector = svd.transform(test_vector)
 
     return train_vector, test_vector
