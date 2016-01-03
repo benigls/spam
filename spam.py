@@ -176,10 +176,10 @@ with open('{}/config.json'.format(exp_dir), 'w') as f:
 
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
 
-print('Updating config id..')
-CONFIG['id'] += 1
+# print('Updating config id..')
+# CONFIG['id'] += 1
 
-with open(CONFIG_FILENAME, 'w+') as f:
-    json.dump(CONFIG, f)
+# with open(CONFIG_FILENAME, 'w+') as f:
+#     json.dump(CONFIG, f)
 
 print('Done!')
