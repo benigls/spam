@@ -35,6 +35,8 @@ def parse_config():
         return None, None
 
 
+np.random.seed(1337)
+
 CONFIG, CONFIG_FILENAME = parse_config()
 if not CONFIG:
     sys.exit()
@@ -86,11 +88,13 @@ if CONFIG['npz']['generate']:
     print('Generating feature vectors..')
     unlabeled_feat, _ = preprocess.count_vectorizer(
         [unlabeled_data['email'], None],
-        max_features=CONFIG['preprocess']['max_features'],
+        n_components=CONFIG['preprocess']['n_components'],
+        n_iter=CONFIG['preprocess']['n_iter'],
     )
     train_feat, test_feat = preprocess.count_vectorizer(
         [train_data['email'], test_data['email']],
-        max_features=CONFIG['preprocess']['max_features'],
+        n_components=CONFIG['preprocess']['n_components'],
+        n_iter=CONFIG['preprocess']['n_iter'],
     )
 
     print('Exporting npz files inside {}..'.format(NPZ_DEST))
@@ -172,7 +176,7 @@ model.save_weights('{}/model_weights.hdf5'
                    .format(exp_dir), overwrite=True)
 
 with open('{}/config.json'.format(exp_dir), 'w') as f:
-    json.dump(CONFIG, f)
+    json.dump(CONFIG, f, indent=4)
 
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
 
@@ -180,6 +184,6 @@ plt.savefig('{}/roc_curve.png'.format(exp_dir))
 # CONFIG['id'] += 1
 
 # with open(CONFIG_FILENAME, 'w+') as f:
-#     json.dump(CONFIG, f)
+#     json.dump(CONFIG, f, indent=4)
 
 print('Done!')
