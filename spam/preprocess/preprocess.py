@@ -109,7 +109,8 @@ def count_vectorizer(dataset, n_components=100, n_iter=5):
     train_vector = normalizer.fit_transform(train_vector).toarray()
     train_vector = svd.fit_transform(train_vector)
 
-    if test_list:
+    test_vector = test_list
+    if test_vector:
         test_vector = vector.transform(test_list).astype('float64')
         test_vector = normalizer.transform(test_vector).toarray()
         test_vector = svd.transform(test_vector)
