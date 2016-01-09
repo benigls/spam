@@ -57,10 +57,6 @@ def split_dataset(file_path_list, seed=0):
     A helper function that accepts list of file paths
     and splits them into unlabeled, train, test sets.
     """
-    # transform list of tuple into two list
-    # e.g. [('/path/to/file', 'spam')] ==> ['path/to/file'], ['spam']
-    path, classification = zip(*file_path_list)
-
     # split the data into labeled and unlabeled
     unlabeled_path, labeled_path, \
         _, labeled_class = train_test_split(

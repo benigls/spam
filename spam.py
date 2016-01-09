@@ -12,8 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import (precision_score, recall_score,
                              f1_score, accuracy_score, roc_curve,
                              auc)
-from spam.common.utils import (get_file_path_list, split_dataset,
-                               df_params, dataset_meta)
+from spam.common import utils
 
 from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
@@ -45,32 +44,21 @@ NPZ_DEST = CONFIG['npz']['dest']
 CSV_DEST = CONFIG['csv']['dest']
 
 if CONFIG['csv']['generate']:
-    file_path_list = get_file_path_list(dataset_meta(CONFIG['dataset']))
+    file_path_list = utils.get_file_path_list(
+        utils.dataset_meta(CONFIG['dataset']))
 
-    print('\n{}\n'.format('-' * 50))
-    print('Spliting the dataset..')
-    unlabeled_path, (train_path, train_class), \
-        (test_path, test_class) = split_dataset(file_path_list, seed=1337)
+    # transform list of tuple into two list
+    # e.g. [('/path/to/file', 'spam')] ==> ['path/to/file'], ['spam']
+    paths, labels = zip(*file_path_list)
 
     # generate panda dataframes and export it to csv
-    print('Generating unlabeled dataframe..')
-    unlabeled_data = pd.DataFrame(**df_params(
-        paths=unlabeled_path,
-        labels=[None for _ in range(len(unlabeled_path))]))
+    print('\n{}\n'.format('-' * 50))
+    print('Generating dataframe..')
+    dataset = pd.DataFrame(**utils.df_params(paths, labels))
 
-    print('\nGenerating train dataframe..')
-    train_data = pd.DataFrame(**df_params(
-        paths=train_path, labels=train_class))
-
-    print('\nGenerating test dataframe..')
-    test_data = pd.DataFrame(**df_params(
-        paths=test_path, labels=test_class))
-
-    print('\nExporting dataframes into a csv files inside {} ..'
+    print('\nExporting dataframe into a csv file inside {}'
           .format(CSV_DEST))
-    unlabeled_data.to_csv('{}/unlabeled.csv'.format(CSV_DEST))
-    train_data.to_csv('{}/train.csv'.format(CSV_DEST))
-    test_data.to_csv('{}/test.csv'.format(CSV_DEST))
+    dataset.to_csv('{}/dataset.csv'.format(CSV_DEST))
 
 if CONFIG['npz']['generate']:
     print('\n{}\n'.format('-' * 50))
