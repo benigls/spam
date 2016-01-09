@@ -16,27 +16,21 @@ from sklearn.preprocessing import Normalizer
 # from sklearn.decomposition import TruncatedSVD
 
 
-def regex(text):
-    """
-    A function that removes non-alphanumeric, -, _ characters
-    and the word `Subject:`, and `re:` in text.
-    """
-    clean_text = re.sub('Subject:|re:', '', text)
-    clean_text = re.sub('[^\w]+', ' ', clean_text)
-
-    return clean_text
-
-
 def tokenizer(text):
-    """
-    A function that splits a text.
-    """
+    """ A function that splits a text. """
     return tokenize.word_tokenize(text)
 
 
-def remove_stopwords(word_list):
+def regex(text):
+    """ Remove all words except alphanumeric characters and
+    remove the `Subject:`
     """
-    A function that remove stopwords from a list of words
+    clean_text = re.sub('Subject:', '', text)
+    return ' '.join([w for w in tokenizer(clean_text) if w.isalnum()])
+
+
+def remove_stopwords(word_list):
+    """ A function that remove stopwords from a list of words
     and lemmatize it.
     """
     lemma = WordNetLemmatizer()
@@ -44,12 +38,13 @@ def remove_stopwords(word_list):
             if word not in stopwords.words('english')]
 
 
-def clean_text(text):
+def clean_text(subject, body):
     """
     A function that cleans text (regex, token, stop).
     """
-    word_list = remove_stopwords(tokenizer(regex(text)))
-    return ' '.join(word_list)
+    subject_list = remove_stopwords(tokenizer(regex(subject)))
+    body_list = remove_stopwords(tokenizer(regex(body)))
+    return ' '.join(subject_list), ' '.join(body_list)
 
 
 def static_vars(**kwargs):
@@ -67,7 +62,10 @@ def read_email(path, clean=True):
     """
     with open(path, 'r', encoding='iso-8859-1') as file:
         try:
-            content = ''.join(file.readlines())
+            content = file.readlines()
+            subject = content.pop(0)
+            body = ''.join(content)
+
             read_email.success += 1
         except UnicodeDecodeError:
             content = ''
@@ -80,7 +78,10 @@ def read_email(path, clean=True):
     ))
     sys.stdout.flush()
 
-    return clean_text(content) if clean else content
+    if clean:
+        subject, body = clean_text(subject, body)
+
+    return subject, body
 
 
 def count_vectorizer(dataset, max_features=5000, n_components=100, n_iter=5):

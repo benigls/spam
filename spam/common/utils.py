@@ -81,21 +81,20 @@ def split_dataset(file_path_list, seed=0):
 
 def df_params(paths, labels):
     """ Returns a dict as a parameter for the dataframe. """
-    unlabel, ham, spam = -1, 0, 1
-    data = {'email': [], 'class': [], }
-    columns = ['email', 'class']
+    ham, spam = 0, 1
+    data = {'label': [], 'subject': [], 'body': []}
+    columns = ['label', 'subject', 'body']
 
     for path, label in zip(paths, labels):
-        email = preprocess.read_email(path)
-        if email == '':
+        subject, body = preprocess.read_email(path)
+        if body == '':
             continue
 
-        data['email'].append(email)
+        data['body'].append(body)
+        data['subject'].append(subject)
         if label == 'spam':
-            data['class'].append(spam)
+            data['label'].append(spam)
         elif label == 'ham':
-            data['class'].append(ham)
-        else:
-            data['class'].append(unlabel)
+            data['label'].append(ham)
 
     return {'data': data, 'columns': columns, }
