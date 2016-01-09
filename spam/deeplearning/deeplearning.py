@@ -13,7 +13,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
-from keras.layers.noise import GaussianNoise
+# from keras.layers.noise import GaussianNoise
 from keras.utils import np_utils
 
 
@@ -39,19 +39,21 @@ class StackedDenoisingAutoEncoder:
 
     def get_dataset(self):
         """ Get dataset and unpack it. """
-        prefix = 'data/npz/'
+        prefix = 'data/npz'
 
-        unlabeled_train = np.load('{}unlabeled_feature.npz'
+        unlabeled_train = np.load('{}/unlabeled.npz'
                                   .format(prefix))['X']
 
-        train_data = np.load('{}train_feature.npz'.format(prefix))
+        train_data = np.load('{}/train.npz'.format(prefix))
         X_train, Y_train = train_data['X'], train_data['Y']
 
-        test_data = np.load('{}test_feature.npz'.format(prefix))
+        test_data = np.load('{}/test.npz'.format(prefix))
         X_test, Y_test = test_data['X'], test_data['Y']
 
         X_train = X_train.astype('float64')
         X_test = X_test.astype('float64')
+        X_train = X_train.reshape(-1, self.hidden_layers[0])
+        X_test = X_test.reshape(-1, self.hidden_layers[0])
 
         Y_train = np_utils.to_categorical(Y_train, self.classes)
         Y_true = np.asarray(Y_test, dtype='int64')
@@ -78,12 +80,13 @@ class StackedDenoisingAutoEncoder:
             # build the denoising autoencoder model structure
             ae = Sequential()
 
+            # GaussianNoise(self.noise_layers[i - 1],
+            #               input_shape=(n_in,)),
+
             # build the encoder with the gaussian noise
             encoder = containers.Sequential([
-                GaussianNoise(self.noise_layers[i - 1],
-                              input_shape=(n_in,)),
                 Dense(input_dim=n_in, output_dim=n_out,
-                      activation='sigmoid')
+                      activation='sigmoid', init='uniform')
             ])
 
             # build the decoder
