@@ -68,41 +68,39 @@ if CONFIG['csv']['generate']:
 
     print('\nExporting dataframes into a csv files inside {} ..'
           .format(CSV_DEST))
-    unlabeled_data.to_csv('{}/unlabeled_data.csv'.format(CSV_DEST))
-    train_data.to_csv('{}/train_data.csv'.format(CSV_DEST))
-    test_data.to_csv('{}/test_data.csv'.format(CSV_DEST))
+    unlabeled_data.to_csv('{}/unlabeled.csv'.format(CSV_DEST))
+    train_data.to_csv('{}/train.csv'.format(CSV_DEST))
+    test_data.to_csv('{}/test.csv'.format(CSV_DEST))
 
 if CONFIG['npz']['generate']:
     print('\n{}\n'.format('-' * 50))
     print('Reading csv files..')
-    unlabeled_data = pd.read_csv('{}/unlabeled_data.csv'
+    unlabeled_data = pd.read_csv('{}/unlabeled.csv'
                                  .format(CSV_DEST),
                                  encoding='iso-8859-1')
-    train_data = pd.read_csv('{}/train_data.csv'
+    train_data = pd.read_csv('{}/train.csv'
                              .format(CSV_DEST),
                              encoding='iso-8859-1')
-    test_data = pd.read_csv('{}/test_data.csv'
+    test_data = pd.read_csv('{}/test.csv'
                             .format(CSV_DEST),
                             encoding='iso-8859-1')
 
     print('Generating feature vectors..')
-    unlabeled_feat, _ = preprocess.count_vectorizer(
-        [unlabeled_data['email'], None],
-        n_components=CONFIG['preprocess']['n_components'],
-        n_iter=CONFIG['preprocess']['n_iter'],
-    )
-    train_feat, test_feat = preprocess.count_vectorizer(
-        [train_data['email'], test_data['email']],
-        n_components=CONFIG['preprocess']['n_components'],
-        n_iter=CONFIG['preprocess']['n_iter'],
-    )
+    unlabeled_feat, train_feat, test_feat = \
+        preprocess.count_vectorizer(
+            [unlabeled_data['email'], train_data['email'],
+                test_data['email']],
+            max_features=CONFIG['preprocess']['max_features'],
+            n_components=CONFIG['preprocess']['n_components'],
+            n_iter=CONFIG['preprocess']['n_iter'],
+        )
 
     print('Exporting npz files inside {}..'.format(NPZ_DEST))
-    np.savez('{}/unlabeled_feature'.format(NPZ_DEST),
+    np.savez('{}/unlabeled'.format(NPZ_DEST),
              X=unlabeled_feat)
-    np.savez('{}/train_feature'.format(NPZ_DEST),
+    np.savez('{}/train'.format(NPZ_DEST),
              X=train_feat, Y=train_data['class'].values)
-    np.savez('{}/test_feature'.format(NPZ_DEST),
+    np.savez('{}/test'.format(NPZ_DEST),
              X=test_feat, Y=test_data['class'].values)
 
 print('\n{}\n'.format('-' * 50))

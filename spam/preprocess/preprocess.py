@@ -13,7 +13,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import Normalizer
-from sklearn.decomposition import TruncatedSVD
+# from sklearn.decomposition import TruncatedSVD
 
 
 def regex(text):
@@ -83,7 +83,7 @@ def read_email(path, clean=True):
     return clean_text(content) if clean else content
 
 
-def count_vectorizer(dataset, n_components=100, n_iter=5):
+def count_vectorizer(dataset, max_features=5000, n_components=100, n_iter=5):
     """ Transforms panda series to count vectorizer and apply
     a truncated svd to minize the feature vector.
     """
@@ -91,28 +91,34 @@ def count_vectorizer(dataset, n_components=100, n_iter=5):
                        for email in x.values.tolist()
                        if type(email) is not float]
 
-    train_list = clean(dataset[0])
-    test_list = clean(dataset[1]) if dataset[1] is not None else None
+    unlabeled_list = clean(dataset[0])
+    train_list = clean(dataset[1])
+    test_list = clean(dataset[2])
 
     vector = CountVectorizer(
         analyzer='word',
         tokenizer=None,
         preprocessor=None,
         stop_words=None,
-        max_features=5000,
+        max_features=max_features,
     )
     normalizer = Normalizer()
-    svd = TruncatedSVD(n_components=n_components, n_iter=n_iter,
-                       random_state=1337, )
+    # svd = TruncatedSVD(n_components=n_components, n_iter=n_iter,
+    #                    random_state=1337, )
 
-    train_vector = vector.fit_transform(train_list).astype('float64')
-    train_vector = normalizer.fit_transform(train_vector).toarray()
-    train_vector = svd.fit_transform(train_vector)
+    unlabeled_vector = vector.fit_transform(unlabeled_list).astype('float64')
+    # unlabeled_vector = unlabeled_vector.reshape(-1, n_components)
+    unlabeled_vector = normalizer.fit_transform(unlabeled_vector).toarray()
+    # unlabeled_vector = svd.transform(unlabeled_vector)
 
-    test_vector = test_list
-    if test_vector:
-        test_vector = vector.transform(test_list).astype('float64')
-        test_vector = normalizer.transform(test_vector).toarray()
-        test_vector = svd.transform(test_vector)
+    train_vector = vector.transform(train_list).astype('float64')
+    # train_vector = train_vector.reshape(-1, n_components)
+    train_vector = normalizer.transform(train_vector).toarray()
+    # train_vector = svd.transform(train_vector)
 
-    return train_vector, test_vector
+    test_vector = vector.transform(test_list).astype('float64')
+    # test_vector = test_vector.reshape(-1, n_components)
+    test_vector = normalizer.transform(test_vector).toarray()
+    # test_vector = svd.transform(test_vector)
+
+    return unlabeled_vector, train_vector, test_vector
