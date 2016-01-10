@@ -82,8 +82,8 @@ if CONFIG['npz']['generate']:
 
     print('Exporting npz files inside {}'.format(NPZ_DEST))
     np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
-    np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, Y=y_train)
-    np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, Y=y_test)
+    np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
+    np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
