@@ -101,8 +101,8 @@ model.add(sda.build_finetune())
 
 model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
-X_train, Y_train = sda.dataset['train_data']
-X_test, Y_test, Y_true = sda.dataset['test_data']
+X_train, Y_train = sda.dataset['train']
+X_test, Y_test, Y_true = sda.dataset['test']
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')

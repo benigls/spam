@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Deep learning module.
-
-X: input
-Y: label
-y: predicted label
-"""
 
 import numpy as np
 
@@ -41,27 +34,26 @@ class StackedDenoisingAutoEncoder:
         """ Get dataset and unpack it. """
         prefix = 'data/npz'
 
-        unlabeled_train = np.load('{}/unlabeled.npz'
-                                  .format(prefix))['X']
+        X_unlabel = np.load('{}/unlabel.npz'.format(prefix))['X']
 
         train_data = np.load('{}/train.npz'.format(prefix))
-        X_train, Y_train = train_data['X'], train_data['Y']
+        X_train, y_train = train_data['X'], train_data['y']
 
         test_data = np.load('{}/test.npz'.format(prefix))
-        X_test, Y_test = test_data['X'], test_data['Y']
+        X_test, y_test = test_data['X'], test_data['y']
 
         X_train = X_train.astype('float64')
         X_test = X_test.astype('float64')
         X_train = X_train.reshape(-1, self.hidden_layers[0])
         X_test = X_test.reshape(-1, self.hidden_layers[0])
 
-        Y_train = np_utils.to_categorical(Y_train, self.classes)
-        Y_true = np.asarray(Y_test, dtype='int64')
-        Y_test = np_utils.to_categorical(Y_test, self.classes)
+        Y_train = np_utils.to_categorical(y_train, self.classes)
+        Y_true = np.asarray(y_test, dtype='int64')
+        Y_test = np_utils.to_categorical(y_test, self.classes)
 
-        return {'unlabeled_data': unlabeled_train,
-                'train_data': (X_train, Y_train),
-                'test_data': (X_test, Y_test, Y_true), }
+        return {'unlabel': X_unlabel,
+                'train': (X_train, Y_train),
+                'test': (X_test, Y_test, Y_true), }
 
     def build_sda(self):
         """ Build Stack Denoising Autoencoder and perform a
@@ -69,7 +61,7 @@ class StackedDenoisingAutoEncoder:
         """
         encoders = []
 
-        input_data = np.copy(self.dataset['unlabeled_data'])
+        input_data = np.copy(self.dataset['unlabel'])
 
         for i, (n_in, n_out) in enumerate(zip(
                 self.hidden_layers[:-1], self.hidden_layers[1:]),
