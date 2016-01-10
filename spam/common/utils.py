@@ -90,8 +90,10 @@ def df_params(paths, labels):
         if body == '':
             continue
 
+        subject = ' ' if subject == '' else subject
         data['body'].append(body)
         data['subject'].append(subject)
+
         if label == 'spam':
             data['label'].append(spam)
         elif label == 'ham':
