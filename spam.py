@@ -63,33 +63,27 @@ if CONFIG['csv']['generate']:
 if CONFIG['npz']['generate']:
     print('\n{}\n'.format('-' * 50))
     print('Reading csv files..')
-    unlabeled_data = pd.read_csv('{}/unlabeled.csv'
-                                 .format(CSV_DEST),
-                                 encoding='iso-8859-1')
-    train_data = pd.read_csv('{}/train.csv'
-                             .format(CSV_DEST),
-                             encoding='iso-8859-1')
-    test_data = pd.read_csv('{}/test.csv'
-                            .format(CSV_DEST),
-                            encoding='iso-8859-1')
+    dataset = pd.read_csv('{}/dataset.csv'
+                          .format(CSV_DEST),
+                          encoding='iso-8859-1')
 
     print('Generating feature vectors..')
-    unlabeled_feat, train_feat, test_feat = \
-        preprocess.count_vectorizer(
-            [unlabeled_data['email'], train_data['email'],
-                test_data['email']],
-            max_features=CONFIG['preprocess']['max_features'],
-            n_components=CONFIG['preprocess']['n_components'],
-            n_iter=CONFIG['preprocess']['n_iter'],
-        )
+    counts = preprocess.count_vectorizer(
+        subject=dataset['subject'].values.tolist(),
+        body=dataset['body'].values.tolist(),
+        max_features=CONFIG['preprocess']['max_features'],
+        n_components=CONFIG['preprocess']['n_components'],
+        n_iter=CONFIG['preprocess']['n_iter'],
+    )
 
-    print('Exporting npz files inside {}..'.format(NPZ_DEST))
-    np.savez('{}/unlabeled'.format(NPZ_DEST),
-             X=unlabeled_feat)
-    np.savez('{}/train'.format(NPZ_DEST),
-             X=train_feat, Y=train_data['class'].values)
-    np.savez('{}/test'.format(NPZ_DEST),
-             X=test_feat, Y=test_data['class'].values)
+    print('Spliting the dataset..')
+    X_unlabel, (X_train, y_train), (X_test, y_test) = \
+        utils.split_dataset(counts, dataset['label'].values)
+
+    print('Exporting npz files inside {}'.format(NPZ_DEST))
+    np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
+    np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, Y=y_train)
+    np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, Y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')

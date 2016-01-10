@@ -1,7 +1,7 @@
 {
     "id": 100,
     "csv": {
-        "generate": true,
+        "generate": false,
         "dest": "data/csv"
     },
     "npz": {

@@ -52,31 +52,27 @@ def get_file_path_list(dataset_meta):
     return email_file_path_list
 
 
-def split_dataset(file_path_list, seed=0):
-    """
-    A helper function that accepts list of file paths
-    and splits them into unlabeled, train, test sets.
-    """
-    # split the data into labeled and unlabeled
-    unlabeled_path, labeled_path, \
-        _, labeled_class = train_test_split(
-            path,
-            classification,
+def split_dataset(counts, label, seed=0):
+    """ Splits the counts into unlabel, train, test sets. """
+    # split the data into label and unlabel
+    X_unlabel, X_label, _, y_label = \
+        train_test_split(
+            counts,
+            label,
             test_size=0.1,
             random_state=seed,
         )
 
     # split data into train and test data
-    train_path, test_path, \
-        train_class, test_class = train_test_split(
-            labeled_path,
-            labeled_class,
+    X_train, X_test, y_train, y_test = \
+        train_test_split(
+            X_label,
+            y_label,
             test_size=0.2,
             random_state=seed,
         )
 
-    return unlabeled_path, (train_path, train_class), \
-        (test_path, test_class)
+    return X_unlabel, (X_train, y_train), (X_test, y_test)
 
 
 def df_params(paths, labels):
@@ -90,7 +86,9 @@ def df_params(paths, labels):
         if body == '':
             continue
 
+        # make sure that the subj has a value
         subject = ' ' if subject == '' else subject
+
         data['body'].append(body)
         data['subject'].append(subject)
 
