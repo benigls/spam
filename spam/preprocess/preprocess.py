@@ -8,7 +8,8 @@ for machine learning process.
 import re
 import sys
 
-from scipy.sparse import csr_matrix
+import enchant
+
 from nltk import tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -31,17 +32,17 @@ def regex(text):
 
 def remove_stopwords(word_list):
     """ A function that remove stopwords from a list of words
-    and lemmatize it.
+    and lemmatize it and remove mispelled words.
     """
     lemma = WordNetLemmatizer()
-    return [lemma.lemmatize(word) for word in word_list
+    d = enchant.Dict('en_US')
+    words = [w for w in word_list if d.check(w)]
+    return [lemma.lemmatize(word) for word in words
             if word not in stopwords.words('english')]
 
 
 def clean_text(subject, body):
-    """
-    A function that cleans text (regex, token, stop).
-    """
+    """ A function that cleans text (regex, token, stop). """
     subject_list = remove_stopwords(tokenizer(regex(subject)))
     body_list = remove_stopwords(tokenizer(regex(body)))
     return ' '.join(subject_list), ' '.join(body_list)
@@ -57,8 +58,7 @@ def static_vars(**kwargs):
 
 @static_vars(success=0, fail=0)
 def read_email(path, clean=True):
-    """
-    A function that accepts file paths and return it's contents.
+    """ A function that accepts file paths and return it's contents.
     """
     with open(path, 'r', encoding='iso-8859-1') as file:
         try:
@@ -84,11 +84,9 @@ def read_email(path, clean=True):
     return subject, body
 
 
-def count_vectorizer(dataset=None, max_features=2000):
-    """ Transforms panda series to count matrix and
-    normalize it then transform it to a dense matrix.
-    """
-    clean = lambda words: [word.encode('utf-8')
+def count_vectorizer(dataset=None, max_features=1000):
+    """ Transforms panda series to count matrix and normalize it. """
+    clean = lambda words: [str(word)
                            for word in words
                            if type(word) is not float]
 
@@ -96,21 +94,21 @@ def count_vectorizer(dataset=None, max_features=2000):
     x_train = clean(dataset[1])
     x_test = clean(dataset[2])
 
-    vector = CountVectorizer(analyzer='word', max_features=max_features)
+    vector = CountVectorizer(
+        analyzer='word',
+        max_features=max_features,
+        min_df=100,
+        dtype='float64',
+    )
     normalizer = Normalizer()
 
-    X_unlabel = vector.fit_transform(x_unlabel).astype('float64')
-    X_unlabel = csr_matrix(X_unlabel).todense()
-    # X_unlabel = normalizer.fit_transform(X_unlabel)
+    X_unlabel = vector.fit_transform(x_unlabel).todense()
+    X_unlabel = normalizer.fit_transform(X_unlabel)
 
-    X_train = vector.transform(x_train).astype('float64')
-    X_train = csr_matrix(X_train).todense()
-    # X_train = normalizer.transform(X_train)
+    X_train = vector.transform(x_train).todense()
+    X_train = normalizer.transform(X_train)
 
-    X_test = vector.transform(x_test).astype('float64')
-    X_test = csr_matrix(X_test).todense()
-    # X_test = normalizer.transform(X_test)
-    import pdb
-    pdb.set_trace()
+    X_test = vector.transform(x_test).todense()
+    X_test = normalizer.transform(X_test)
 
     return X_unlabel, X_train, X_test
