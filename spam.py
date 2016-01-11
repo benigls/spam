@@ -77,9 +77,6 @@ if CONFIG['npz']['generate']:
         dataset=[x_unlabel, x_train, x_test, ],
         max_features=CONFIG['preprocess']['max_features'],
     )
-    print(X_unlabel.shape)
-    print(X_train.shape, y_train.shape)
-    print(X_test.shape, y_test.shape)
 
     print('Exporting npz files inside {}'.format(NPZ_DEST))
     np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
@@ -100,7 +97,7 @@ model = sda.build_sda()
 
 model.add(sda.build_finetune())
 
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+model.compile(loss='categorical_crossentropy', optimizer='sgd')
 
 X_train, Y_train = sda.dataset['train']
 X_test, Y_test, Y_true = sda.dataset['test']
