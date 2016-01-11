@@ -67,18 +67,19 @@ if CONFIG['npz']['generate']:
                           .format(CSV_DEST),
                           encoding='iso-8859-1')
 
-    print('Generating feature vectors..')
-    counts = preprocess.count_vectorizer(
-        subject=dataset['subject'].values.tolist(),
-        body=dataset['body'].values.tolist(),
-        max_features=CONFIG['preprocess']['max_features'],
-        n_components=CONFIG['preprocess']['n_components'],
-        n_iter=CONFIG['preprocess']['n_iter'],
-    )
-
     print('Spliting the dataset..')
-    X_unlabel, (X_train, y_train), (X_test, y_test) = \
-        utils.split_dataset(counts, dataset['label'].values)
+    x_unlabel, (x_train, y_train), (x_test, y_test) = \
+        utils.split_dataset(dataset['body'].values,
+                            dataset['label'].values)
+
+    print('Generating feature vectors..')
+    X_unlabel, X_train, X_test = preprocess.count_vectorizer(
+        dataset=[x_unlabel, x_train, x_test, ],
+        max_features=CONFIG['preprocess']['max_features'],
+    )
+    print(X_unlabel.shape)
+    print(X_train.shape, y_train.shape)
+    print(X_test.shape, y_test.shape)
 
     print('Exporting npz files inside {}'.format(NPZ_DEST))
     np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)

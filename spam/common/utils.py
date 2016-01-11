@@ -52,12 +52,12 @@ def get_file_path_list(dataset_meta):
     return email_file_path_list
 
 
-def split_dataset(counts, label, seed=0):
-    """ Splits the counts into unlabel, train, test sets. """
+def split_dataset(text, label, seed=0):
+    """ Splits the dataset into unlabel, train, test sets. """
     # split the data into label and unlabel
     X_unlabel, X_label, _, y_label = \
         train_test_split(
-            counts,
+            text,
             label,
             test_size=0.1,
             random_state=seed,
