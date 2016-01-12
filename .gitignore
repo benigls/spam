@@ -2,3 +2,7 @@
 __pycache__
 
 *.csv
+
+enron_dataset/
+data/
+experiments/
