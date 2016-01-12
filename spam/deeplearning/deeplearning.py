@@ -4,7 +4,7 @@
 import numpy as np
 
 from keras.models import Sequential
-from keras.layers import containers
+# from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 # from keras.layers.noise import GaussianNoise
 from keras.utils import np_utils
@@ -42,13 +42,13 @@ class StackedDenoisingAutoEncoder:
         test_data = np.load('{}/test.npz'.format(prefix))
         X_test, y_test = test_data['X'], test_data['y']
 
-        X_train = X_train.astype('float64')
-        X_test = X_test.astype('float64')
-        X_train = X_train.reshape(-1, self.hidden_layers[0])
-        X_test = X_test.reshape(-1, self.hidden_layers[0])
+        X_train = X_train.astype('float32')
+        X_test = X_test.astype('float32')
+        # X_train = X_train.reshape(-1, self.hidden_layers[0])
+        # X_test = X_test.reshape(-1, self.hidden_layers[0])
 
         Y_train = np_utils.to_categorical(y_train, self.classes)
-        Y_true = np.asarray(y_test, dtype='int64')
+        Y_true = np.asarray(y_test, dtype='int32')
         Y_test = np_utils.to_categorical(y_test, self.classes)
 
         return {'unlabel': X_unlabel,
@@ -76,16 +76,12 @@ class StackedDenoisingAutoEncoder:
             #               input_shape=(n_in,)),
 
             # build the encoder with the gaussian noise
-            encoder = containers.Sequential([
-                Dense(input_dim=n_in, output_dim=n_out,
-                      activation='sigmoid', init='uniform')
-            ])
+            encoder = Dense(input_dim=n_in, output_dim=n_out,
+                            activation='sigmoid')
 
             # build the decoder
-            decoder = containers.Sequential([
-                Dense(input_dim=n_out, output_dim=n_in,
-                      activation='sigmoid')
-            ])
+            decoder = Dense(input_dim=n_out, output_dim=n_in,
+                            activation='sigmoid')
 
             # build the denoising autoencoder
             ae.add(AutoEncoder(
