@@ -16,24 +16,19 @@
                 "total_count": 5172,
                 "ham_count": 3672,
                 "spam_count": 1500
-            },
-            {
-                "name": "enron2",
-                "total_count": 5857,
-                "ham_count": 4361,
-                "spam_count": 1496
             }
         ]
     },
     "preprocess": {
-        "max_features": 600
+        "max_words": 20000,
+        "max_features": 800
     },
     "model": {
         "batch_size": 128,
         "classes": 2,
         "epochs": 2,
         "n_folds": 4,
-        "hidden_layers": [600, 400, 300, 250],
-        "noise_layers": [0.5, 0.2, 0.1]
+        "hidden_layers": [800, 600, 400, 300 ],
+        "noise_layers": [0.6, 0.4, 0.3 ]
     }
 }
