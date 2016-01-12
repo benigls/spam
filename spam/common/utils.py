@@ -52,27 +52,27 @@ def get_file_path_list(dataset_meta):
     return email_file_path_list
 
 
-def split_dataset(text, label, seed=0):
-    """ Splits the dataset into unlabel, train, test sets. """
+def split_dataset(x, y, seed=0):
+    """ Split the dataset into unlabel, train, and test sets. """
     # split the data into label and unlabel
-    X_unlabel, X_label, _, y_label = \
+    x_unlabel, x_label, _, y_label = \
         train_test_split(
-            text,
-            label,
+            x,
+            y,
             test_size=0.1,
             random_state=seed,
         )
 
     # split data into train and test data
-    X_train, X_test, y_train, y_test = \
+    x_train, x_test, y_train, y_test = \
         train_test_split(
-            X_label,
+            x_label,
             y_label,
             test_size=0.2,
             random_state=seed,
         )
 
-    return X_unlabel, (X_train, y_train), (X_test, y_test)
+    return x_unlabel, (x_train, y_train), (x_test, y_test)
 
 
 def df_params(paths, labels):
