@@ -9,6 +9,7 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import (precision_score, recall_score,
                              f1_score, accuracy_score, roc_curve,
                              auc)
@@ -72,10 +73,11 @@ if CONFIG['npz']['generate']:
         utils.split_dataset(dataset['body'].values,
                             dataset['label'].values)
 
-    print('Generating feature vectors..')
-    X_unlabel, X_train, X_test = preprocess.count_vectorizer(
+    print('Generating feature matrix..')
+    X_unlabel, X_train, X_test = preprocess.feature_matrix(
         dataset=[x_unlabel, x_train, x_test, ],
-        max_features=CONFIG['preprocess']['max_features'],
+        max_words=CONFIG['preprocess']['max_words'],
+        max_features=CONFIG['preprocess']['max_features']
     )
 
     print('Exporting npz files inside {}'.format(NPZ_DEST))
