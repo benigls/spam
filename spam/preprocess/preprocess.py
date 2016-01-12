@@ -10,11 +10,11 @@ import sys
 
 import enchant
 
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
 from nltk import tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.preprocessing import Normalizer
 
 
 def tokenizer(text):
@@ -84,7 +84,7 @@ def read_email(path, clean=True):
     return subject, body
 
 
-def count_vectorizer(dataset=None, max_features=1000):
+def feature_matrix(dataset=None, max_words=5000, max_features=600):
     """ Transforms panda series to count matrix and normalize it. """
     clean = lambda words: [str(word)
                            for word in words
@@ -94,21 +94,16 @@ def count_vectorizer(dataset=None, max_features=1000):
     x_train = clean(dataset[1])
     x_test = clean(dataset[2])
 
-    vector = CountVectorizer(
-        analyzer='word',
-        max_features=max_features,
-        min_df=100,
-        dtype='float64',
-    )
-    normalizer = Normalizer()
+    tokenizer = Tokenizer(nb_words=max_words)
+    tokenizer.fit_on_texts(x_unlabel + x_train + x_test)
 
-    X_unlabel = vector.fit_transform(x_unlabel).todense()
-    X_unlabel = normalizer.fit_transform(X_unlabel)
+    X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
+    X_unlabel = pad_sequences(X_unlabel, maxlen=max_features, dtype='int32')
 
-    X_train = vector.transform(x_train).todense()
-    X_train = normalizer.transform(X_train)
+    X_train = tokenizer.texts_to_sequences(x_train)
+    X_train = pad_sequences(X_train, maxlen=max_features, dtype='int32')
 
-    X_test = vector.transform(x_test).todense()
-    X_test = normalizer.transform(X_test)
+    X_test = tokenizer.texts_to_sequences(x_test)
+    X_test = pad_sequences(X_test, maxlen=max_features, dtype='int32')
 
     return X_unlabel, X_train, X_test
