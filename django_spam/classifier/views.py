@@ -5,4 +5,5 @@ from django.views import generic
 
 class HomePageView(generic.TemplateView):
     """ Homepage view. """
-    template_name = 'classifier/home.html'
+    # TODO: Fix apps template
+    template_name = 'home.html'
