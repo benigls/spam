@@ -3,6 +3,6 @@
 from django.views import generic
 
 
-class HomePage(generic.TemplateView):
+class HomePageView(generic.TemplateView):
     """ Homepage view. """
     template_name = 'classifier/home.html'
