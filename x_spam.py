@@ -8,9 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from keras.models import Sequential
-from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
-from keras.layers.noise import GaussianNoise
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
@@ -27,7 +25,7 @@ max_words = 20000
 batch_size = 64
 classes = 2
 epochs = 2
-hidden_layers = [800, 600, 400, 300, ]
+hidden_layers = [800, 500, 300, 100, ]
 noise_layers = [0.6, 0.4, 0.3, ]
 
 clean = lambda words: [str(word)
@@ -52,43 +50,52 @@ tokenizer = Tokenizer(nb_words=max_words)
 tokenizer.fit_on_texts(x_unlabel)
 
 X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
-X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='int32')
+X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float32')
 
 X_train = tokenizer.texts_to_sequences(x_train)
-X_train = pad_sequences(X_train, maxlen=max_len, dtype='int32')
+X_train = pad_sequences(X_train, maxlen=max_len, dtype='float32')
 
 X_test = tokenizer.texts_to_sequences(x_test)
-X_test = pad_sequences(X_test, maxlen=max_len, dtype='int32')
-
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
+X_test = pad_sequences(X_test, maxlen=max_len, dtype='float32')
 
 Y_train = np_utils.to_categorical(y_train, classes)
-Y_true = np.asarray(y_test, dtype='int32')
 Y_test = np_utils.to_categorical(y_test, classes)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
 
-ae = Sequential()
+encoders = []
+input_data = np.copy(X_unlabel)
 
-encoder = containers.Sequential([
-    GaussianNoise(0.5, input_shape=(800,)),
-    Dense(input_dim=800, output_dim=400,
-          activation='sigmoid', init='uniform')
-])
-decoder = Dense(input_dim=400, output_dim=800,
-                activation='sigmoid')
+for i, (n_in, n_out) in enumerate(zip(
+        hidden_layers[:-1], hidden_layers[1:]), start=1):
+    print('Training layer {}: {} Layers -> {} Layers'
+          .format(i, n_in, n_out))
 
-ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
-                   output_reconstruction=False))
-ae.compile(loss='mean_squared_error', optimizer='sgd')
-ae.fit(X_unlabel, X_unlabel, batch_size=batch_size, nb_epoch=epochs)
+    ae = Sequential()
+
+    encoder = Dense(input_dim=n_in, output_dim=n_out,
+                    activation='sigmoid')
+    decoder = Dense(input_dim=n_out, output_dim=n_in,
+                    activation='sigmoid')
+
+    ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
+                       output_reconstruction=False))
+    ae.compile(loss='mean_squared_error', optimizer='rmsprop')
+    ae.fit(input_data, input_data, batch_size=batch_size,
+           nb_epoch=epochs)
+
+    encoders.append(ae.layers[0].encoder)
+    input_data = ae.predict(input_data)
 
 model = Sequential()
-model.add(ae.layers[0].encoder)
-model.add(Dense(input_dim=400, output_dim=classes, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='sgd')
+for encoder in encoders:
+    model.add(encoder)
+
+model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
+                activation='softmax'))
+
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
@@ -108,8 +115,11 @@ recall = recall_score(y_test, y_pred)
 f1 = f1_score(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(Y_true, y_pred)
+    roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
+
+print(y_test)
+print(y_pred)
 
 print('Accuracy: {}'.format(accuracy))
 print('Precision: {}'.format(precision))
