@@ -52,16 +52,13 @@ tokenizer = Tokenizer(nb_words=max_words)
 tokenizer.fit_on_texts(x_unlabel)
 
 X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
-X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='int32')
+X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
 X_train = tokenizer.texts_to_sequences(x_train)
-X_train = pad_sequences(X_train, maxlen=max_len, dtype='int32')
+X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
 X_test = tokenizer.texts_to_sequences(x_test)
-X_test = pad_sequences(X_test, maxlen=max_len, dtype='int32')
-
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
+X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
 Y_train = np_utils.to_categorical(y_train, classes)
 Y_true = np.asarray(y_test, dtype='int32')
