@@ -34,19 +34,17 @@
             url : 'classify/',
             type : 'POST',
             data : {
-                subject : $('#subject').text(),
-                body : $('#body').text(),
-                csrfmiddlewaretoken: '{{ csrf_token }}',
+                subject : $('#subject').val().trim(),
+                body : $('#body').val().trim(),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
             },
             success : function(json) {
                 $('#label').text('');
                 $('#label').text(json.label);
-                console.log('WEW!!!');
             },
             error : function(xhr, errmsg, err) {
                 // TODO: Display RIGTH error message
-                $('#label').text('HAM');
-                console.log('YO!!!');
+                $('#label').text('_HAM');
             }
         });
     }
