@@ -24,12 +24,11 @@
 <script>
     $('#form').on('submit', function(e){
         e.preventDefault();
-        console.log("submitted!");
         classify();
     });
 
     function classify() {
-        $('#label-text').val('HAM')
+        $('#label').text('HAM');
     }
 </script>
 {% endblock %}
