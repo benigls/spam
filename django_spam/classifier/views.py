@@ -14,7 +14,7 @@ class HomePageView(generic.TemplateView):
 
 def classify(request):
     if request.method == 'POST':
-        label = 1  # 1 = Spam 0 = Ham
+        label = 'HAM'
         response_data = {'label': label}
         return HttpResponse(
             json.dumps(response_data),
@@ -22,6 +22,6 @@ def classify(request):
         )
     else:
         return HttpResponse(
-            json.dumps({"Error": "Only supports post requests."}),
-            content_type="application/json"
+            json.dumps({'Error': 'Only supports post requests.'}),
+            content_type='application/json'
         )
