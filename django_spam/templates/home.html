@@ -1,5 +1,35 @@
 {% extends 'base.html' %}
 
 {% block content %}
-	<h1>Spam Classifier</h1>	    
+    <h1>Spam Classifier</h1>
+    <form method="POST" action="/classifier" id="form">
+        Subject:
+        <br />
+        <input id="subject" name="subject" type="text" placeholder="Subject" />
+        <br />
+        <br />
+        Body:
+        <br />
+        <textarea id="body" name="body" minlength=1 rows="20" cols="60" placeholder="Body" required ></textarea>
+        <br />
+        <br />
+        <input type="submit" value="Classify" />
+    </form>
+    <h3 id="label"></h3>
+{% endblock %}
+
+{% block js %}
+<script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+
+<script>
+    $('#form').on('submit', function(e){
+        e.preventDefault();
+        console.log("submitted!");
+        classify();
+    });
+
+    function classify() {
+        $('#label-text').val('HAM')
+    }
+</script>
 {% endblock %}
