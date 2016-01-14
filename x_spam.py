@@ -26,7 +26,7 @@ batch_size = 64
 classes = 2
 epochs = 2
 hidden_layers = [800, 500, 300, 100, ]
-noise_layers = [0.6, 0.4, 0.3, ]
+noise_layers = [0.1, 0.2, 0.6, ]
 
 clean = lambda words: [str(word)
                        for word in words
@@ -49,17 +49,26 @@ x_unlabel, x_train, x_test = \
 tokenizer = Tokenizer(nb_words=max_words)
 tokenizer.fit_on_texts(x_unlabel)
 
+y_train = np.asarray(y_train, dtype='int32')
+y_test = np.asarray(y_test, dtype='int32')
+
 X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
-X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float32')
+X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
 X_train = tokenizer.texts_to_sequences(x_train)
-X_train = pad_sequences(X_train, maxlen=max_len, dtype='float32')
+X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
 X_test = tokenizer.texts_to_sequences(x_test)
-X_test = pad_sequences(X_test, maxlen=max_len, dtype='float32')
+X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
 Y_train = np_utils.to_categorical(y_train, classes)
 Y_test = np_utils.to_categorical(y_test, classes)
+
+NPZ_DEST = 'data/npz'
+print('Exporting npz files inside {}'.format(NPZ_DEST))
+np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
+np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
+np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
