@@ -24,11 +24,12 @@ from spam.common import utils
 
 np.random.seed(1337)
 
+exp_num = 107
 max_len = 800
 max_words = 1000
-batch_size = 64
+batch_size = 128
 classes = 2
-epochs = 2
+epochs = 10
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -139,6 +140,9 @@ model.fit(
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
+y_prob = model.predict_proba(X_test)
+import pdb
+pdb.set_trace()
 
 metrics = {}
 metrics['accuracy'] = accuracy_score(y_test, y_pred)
@@ -147,7 +151,7 @@ metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(y_test, y_pred)
+    roc_curve(y_test, y_prob)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
 for key, value in metrics.items():
@@ -155,7 +159,7 @@ for key, value in metrics.items():
 
 print('\n{}\n'.format('-' * 50))
 print('Saving config results inside experiments/100_exp/')
-exp_dir = 'experiments/exp_100'
+exp_dir = 'experiments/exp_{}'.format(exp_num)
 os.makedirs(exp_dir, exist_ok=True)
 
 open('{}/model_structure.json'.format(exp_dir), 'w') \
