@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 from keras.models import Sequential
 from keras.layers.core import Dense, AutoEncoder
+from keras.layers.noise import GaussianNoise
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
@@ -21,12 +22,12 @@ from spam.common import utils
 np.random.seed(1337)
 
 max_len = 800
-max_words = 20000
+max_words = 1000
 batch_size = 64
 classes = 2
-epochs = 2
-hidden_layers = [800, 500, 300, 100, ]
-noise_layers = [0.1, 0.2, 0.6, ]
+epochs = 10
+hidden_layers = [800, 500, 300, ]
+noise_layers = [0.6, 0.4, ]
 
 clean = lambda words: [str(word)
                        for word in words
@@ -98,8 +99,9 @@ for i, (n_in, n_out) in enumerate(zip(
     input_data = ae.predict(input_data)
 
 model = Sequential()
-for encoder in encoders:
-    model.add(encoder)
+for i, encoder in enumerate(encoders):
+    model.add(GaussianNoise(noise_layers[i], input_shape=(hidden_layers[i],)))
+    model.add(encoders[i])
 
 model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
                 activation='softmax'))
@@ -108,7 +110,7 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
-history = model.fit(
+model.fit(
     X_train, Y_train, batch_size=batch_size,
     nb_epoch=epochs, show_accuracy=True,
     validation_data=(X_test, Y_test), validation_split=0.1,
@@ -127,8 +129,8 @@ false_positive_rate, true_positive_rate, _ = \
     roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
-print(y_test)
-print(y_pred)
+print(y_test.sum())
+print(y_pred.sum())
 
 print('Accuracy: {}'.format(accuracy))
 print('Precision: {}'.format(precision))
