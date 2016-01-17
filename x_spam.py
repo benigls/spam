@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import json
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,9 @@ from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from keras.callbacks import Callback
 from keras.utils import np_utils
+
 from sklearn.metrics import (precision_score, recall_score, auc,
                              f1_score, accuracy_score, roc_curve)
 
@@ -25,13 +28,26 @@ max_len = 800
 max_words = 1000
 batch_size = 64
 classes = 2
-epochs = 10
+epochs = 2
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
 clean = lambda words: [str(word)
                        for word in words
                        if type(word) is not float]
+
+
+class LossHistory(Callback):
+    def on_train_begin(self, logs=None):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs=None):
+        try:
+            loss = logs.get('loss')
+        except AttributeError:
+            loss = None
+
+        self.losses.append(loss)
 
 
 print('\n{}\n'.format('-' * 50))
@@ -92,8 +108,10 @@ for i, (n_in, n_out) in enumerate(zip(
     ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
                        output_reconstruction=False))
     ae.compile(loss='mean_squared_error', optimizer='rmsprop')
+
+    pretraining_history = LossHistory()
     ae.fit(input_data, input_data, batch_size=batch_size,
-           nb_epoch=epochs)
+           nb_epoch=epochs, callbacks=[pretraining_history])
 
     encoders.append(ae.layers[0].encoder)
     input_data = ae.predict(input_data)
@@ -110,9 +128,11 @@ model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
+
+finetune_history = LossHistory()
 model.fit(
     X_train, Y_train, batch_size=batch_size,
-    nb_epoch=epochs, show_accuracy=True,
+    nb_epoch=epochs, show_accuracy=True, callbacks=[finetune_history],
     validation_data=(X_test, Y_test), validation_split=0.1,
 )
 
@@ -120,23 +140,38 @@ print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
+metrics = {}
+metrics['accuracy'] = accuracy_score(y_test, y_pred)
+metrics['precision'] = precision_score(y_test, y_pred)
+metrics['recall'] = recall_score(y_test, y_pred)
+metrics['f1'] = f1_score(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
     roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
-print(y_test.sum())
-print(y_pred.sum())
+for key, value in metrics.items():
+    print('{}: {}'.format(key, value))
 
-print('Accuracy: {}'.format(accuracy))
-print('Precision: {}'.format(precision))
-print('Recall: {}'.format(recall))
-print('F1: {}'.format(f1))
+print('\n{}\n'.format('-' * 50))
+print('Saving config results inside experiments/100_exp/')
+exp_dir = 'experiments/exp_100'
+os.makedirs(exp_dir, exist_ok=True)
 
+open('{}/model_structure.json'.format(exp_dir), 'w') \
+    .write(model.to_json())
+
+model.save_weights('{}/model_weights.hdf5'
+                   .format(exp_dir), overwrite=True)
+
+with open('{}/metrics.json'.format(exp_dir), 'w') as f:
+    json.dump(metrics, f, indent=4)
+
+with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
+    vocabulary = [w for w in tokenizer.word_counts]
+    json.dump(vocabulary, f)
+
+plt.figure(1)
 plt.title('Receiver Operating Characteristic')
 plt.plot(false_positive_rate, true_positive_rate, 'b',
          label='AUC = {}'.format(roc_auc))
@@ -146,17 +181,17 @@ plt.xlim([-0.1, 1.2])
 plt.ylim([-0.1, 1.2])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
-plt.show()
-
-print('\n{}\n'.format('-' * 50))
-print('Saving config results inside experiments/100_exp/')
-exp_dir = 'experiments/exp_100'
-os.makedirs(exp_dir, exist_ok=True)
-
-open('{}/model_structure.json'.format(exp_dir), 'w') \
-    .write(model.to_json())
-model.save_weights('{}/model_weights.hdf5'
-                   .format(exp_dir), overwrite=True)
-
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
+
+# TODO: add labels to loss history
+plt.figure(2)
+plt.title('Pretraining loss history')
+plt.plot(pretraining_history.losses)
+plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
+
+plt.figure(3)
+plt.title('Finetune loss history')
+plt.plot(finetune_history.losses)
+plt.savefig('{}/finetune_loss.png'.format(exp_dir))
+
 print('Done!')
