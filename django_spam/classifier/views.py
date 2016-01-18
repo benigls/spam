@@ -2,10 +2,37 @@
 
 import json
 
+import enchant
+
 from django.views import generic
 from django.http import HttpResponse
 
-# from keras.model import model_from_config
+from nltk import tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+from keras.model import model_from_config
+
+
+PREFIX = '../experiments/100_exp'
+MODEL = model_from_config('{}/model_structure.json'.format(PREFIX))
+MODEL.load_weights('{}/model_weights.hdf5'.forma(PREFIX))
+
+with open('{}/vocabulary.json', 'r') as f:
+    VOCABULARY = json.load(f)
+
+
+def clean_text(text):
+    """ A function that cleans text for keras tokenazation. """
+    lemma = WordNetLemmatizer()
+    dictionary = enchant.Dict('en_US')
+
+    word_list = [w for w in tokenize.word_tokenize(text)
+                 if w.isalnum()]
+
+    return ' '.join([lemma.lemmatize(word) for word in word_list
+                     if word not in stopwords.words('english')
+                     if dictionary.check(word)])
 
 
 class HomePageView(generic.TemplateView):
@@ -16,24 +43,9 @@ class HomePageView(generic.TemplateView):
 
 def classify(request):
     if request.method == 'POST':
-        # TODO: connect to preprocess and clean the data
-        #       produce vocubulary of words from the dataset.
-
-        # model = model_from_config(
-        #     '../experiments/100_exp/model_structure.json')
-
-        # model.load_weights(
-        #     '../experiments/100_exp/model_weights.hdf5')
         body = request.POST.get('body')
-        num = ord(body[0])
+        body = clean_text(body)
 
-        label = 'HAM' if num % 2 else 'SPAM'
-        response_data = {'label': label}
-
-        return HttpResponse(
-            json.dumps(response_data),
-            content_type="application/json"
-        )
     else:
         return HttpResponse(
             json.dumps({'Error': 'Only supports post requests.'}),
