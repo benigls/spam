@@ -43,8 +43,10 @@
                 $('#label').text(json.label);
             },
             error : function(xhr, errmsg, err) {
-                // TODO: Display RIGTH error message
-                $('#label').text('_HAM');
+                $('#label').text('SERVER ERROR!');
+                console.log('XHR: ' + xhr)
+                console.log('ERRMSG: ' + errmsg)
+                console.log('ERR: ' + err)
             }
         });
     }
