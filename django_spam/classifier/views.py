@@ -16,7 +16,7 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
 
-PREFIX = '../experiments/exp_10'
+PREFIX = '../experiments/exp_112'
 
 with open('{}/model_structure.json'.format(PREFIX), 'r') as f:
     MODEL_STRUCTURE = json.load(f)
@@ -54,13 +54,20 @@ class HomePageView(generic.TemplateView):
 def classify(request):
     if request.method == 'POST':
         body = request.POST.get('body')
+        print('\n\nCleaning text..')
         x = clean_text(body)
 
+        print('Transforming text to sequence..')
         X = TOKENIZER.texts_to_sequences([x, ])
+
+        print('Padding sequence..')
         X = pad_sequences(X, maxlen=800, dtype='float64')
 
+        print('Classifying..')
         y = MODEL.predict_classes(X)[0]
         Y = 'SPAM' if y else 'HAM'
+
+        print('\nLABEL: {}\n\n'.format(Y))
 
         return HttpResponse(
             json.dumps({'label': Y}),

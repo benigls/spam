@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Spam Classifier</h1>
+    <h1>________</h1>
     <form method="POST" id="form">
         {% csrf_token %}
         Subject:
@@ -29,7 +29,8 @@
     });
 
     function classify() {
-        $('#label').text('HAM');
+        $('#label').text('');
+        $('#label').text('pR0c3$$Inq...');
         $.ajax({
             url : 'classify/',
             type : 'POST',
@@ -37,18 +38,16 @@
                 subject : $('#subject').val().trim(),
                 body : $('#body').val().trim(),
                 csrfmiddlewaretoken: '{{ csrf_token }}'
-            },
-            success : function(json) {
-                $('#label').text('');
-                $('#label').text(json.label);
-            },
-            error : function(xhr, errmsg, err) {
-                $('#label').text('SERVER ERROR!');
-                console.log('XHR: ' + xhr)
-                console.log('ERRMSG: ' + errmsg)
-                console.log('ERR: ' + err)
             }
-        });
+        }).done(function(json) {
+            $('#label').text('');
+            $('#label').text(json.label);
+        }).error(function(xhr, errmsg, err) {
+            $('#label').text('$3Rv3R 3rR0r!');
+            console.log('XHR: ' + xhr)
+            console.log('ERRMSG: ' + errmsg)
+            console.log('ERR: ' + err)
+        })
     }
 </script>
 {% endblock %}
