@@ -84,26 +84,25 @@ def read_email(path, clean=True):
     return subject, body
 
 
-def feature_matrix(dataset=None, max_words=5000, max_features=600):
+def feature_matrix(dataset=None, max_words=5000, max_len=800):
     """ Transforms panda series to count matrix and normalize it. """
     clean = lambda words: [str(word)
                            for word in words
                            if type(word) is not float]
 
-    x_unlabel = clean(dataset[0])
-    x_train = clean(dataset[1])
-    x_test = clean(dataset[2])
+    x_unlabel, x_train, x_test = \
+        clean(dataset[0]), clean(dataset[1]), clean(dataset[2])
 
     tokenizer = Tokenizer(nb_words=max_words)
-    tokenizer.fit_on_texts(x_unlabel + x_train + x_test)
+    tokenizer.fit_on_texts(x_unlabel)
 
     X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
-    X_unlabel = pad_sequences(X_unlabel, maxlen=max_features, dtype='int32')
+    X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
     X_train = tokenizer.texts_to_sequences(x_train)
-    X_train = pad_sequences(X_train, maxlen=max_features, dtype='int32')
+    X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
     X_test = tokenizer.texts_to_sequences(x_test)
-    X_test = pad_sequences(X_test, maxlen=max_features, dtype='int32')
+    X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
-    return X_unlabel, X_train, X_test
+    return X_unlabel, X_train, X_test, tokenizer

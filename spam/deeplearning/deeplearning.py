@@ -4,14 +4,28 @@
 import numpy as np
 
 from keras.models import Sequential
-# from keras.layers import containers
+from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
-# from keras.layers.noise import GaussianNoise
+from keras.layers.noise import GaussianNoise
+from keras.callbacks import Callback
 from keras.utils import np_utils
 
 
 class IllegalArgumentError(ValueError):
     pass
+
+
+class LossHistory(Callback):
+    def on_train_begin(self, logs=None):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs=None):
+        try:
+            loss = logs.get('loss')
+        except AttributeError:
+            loss = None
+
+        self.losses.append(loss)
 
 
 class StackedDenoisingAutoEncoder:
@@ -23,6 +37,7 @@ class StackedDenoisingAutoEncoder:
         self.hidden_layers = kwargs.pop('hidden_layers', None)
         self.noise_layers = kwargs.pop('noise_layers', None)
         self.n_folds = kwargs.pop('n_folds', 1)
+        self.history = kwargs.pop('history', None)
         self.dataset = self.get_dataset()
 
         for key, item in kwargs.items():
@@ -42,10 +57,8 @@ class StackedDenoisingAutoEncoder:
         test_data = np.load('{}/test.npz'.format(prefix))
         X_test, y_test = test_data['X'], test_data['y']
 
-        X_train = X_train.astype('float32')
-        X_test = X_test.astype('float32')
-        # X_train = X_train.reshape(-1, self.hidden_layers[0])
-        # X_test = X_test.reshape(-1, self.hidden_layers[0])
+        X_train = X_train.astype('float64')
+        X_test = X_test.astype('float64')
 
         Y_train = np_utils.to_categorical(y_train, self.classes)
         Y_true = np.asarray(y_test, dtype='int32')
@@ -60,7 +73,7 @@ class StackedDenoisingAutoEncoder:
         layer wise pre-training.
         """
         encoders = []
-
+        noises = []
         input_data = np.copy(self.dataset['unlabel'])
 
         for i, (n_in, n_out) in enumerate(zip(
@@ -72,12 +85,13 @@ class StackedDenoisingAutoEncoder:
             # build the denoising autoencoder model structure
             ae = Sequential()
 
-            # GaussianNoise(self.noise_layers[i - 1],
-            #               input_shape=(n_in,)),
-
             # build the encoder with the gaussian noise
-            encoder = Dense(input_dim=n_in, output_dim=n_out,
-                            activation='sigmoid')
+            encoder = containers.Sequential([
+                GaussianNoise(self.noise_layers[i - 1],
+                              input_shape=(n_in,)),
+                Dense(input_dim=n_in, output_dim=n_out,
+                      activation='sigmoid', init='uniform'),
+            ])
 
             # build the decoder
             decoder = Dense(input_dim=n_out, output_dim=n_in,
@@ -88,19 +102,25 @@ class StackedDenoisingAutoEncoder:
                 encoder=encoder, decoder=decoder,
                 output_reconstruction=False,
             ))
-            ae.compile(loss='mean_squared_error', optimizer='sgd')
+            ae.compile(loss='mean_squared_error', optimizer='adadelta')
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
-            ae.fit(input_data, input_data,
-                   batch_size=self.batch_size, nb_epoch=self.epochs)
+            ae.fit(
+                input_data, input_data,
+                batch_size=self.batch_size,
+                nb_epoch=self.epochs,
+                callbacks=[self.history],
+            )
 
-            encoders.append(ae.layers[0].encoder)
+            encoders.append(ae.layers[0].encoder.layers[1])
+            noises.append(ae.layers[0].encoder.layers[0])
             input_data = ae.predict(input_data)
 
-        # merge denoising autoencoder layers
+        # merge denoising autoencoder layers to form a sda
         model = Sequential()
-        for encoder in encoders:
+        for encoder, noise in zip(encoders, noises):
+            model.add(noise)
             model.add(encoder)
 
         return model
