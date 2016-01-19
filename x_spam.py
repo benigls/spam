@@ -3,12 +3,14 @@
 
 import os
 import json
+import timeit
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from keras.models import Sequential
+from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
 from keras.preprocessing.text import Tokenizer
@@ -22,14 +24,16 @@ from sklearn.metrics import (precision_score, recall_score, auc,
 from spam.common import utils
 
 
+start_time = timeit.default_timer()
+
 np.random.seed(1337)
 
-exp_num = 107
+exp_num = 113
 max_len = 800
 max_words = 1000
-batch_size = 128
+batch_size = 256
 classes = 2
-epochs = 10
+epochs = 200
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -92,6 +96,7 @@ print('\n{}\n'.format('-' * 50))
 print('Building model..')
 
 encoders = []
+noises = []
 input_data = np.copy(X_unlabel)
 
 for i, (n_in, n_out) in enumerate(zip(
@@ -101,31 +106,39 @@ for i, (n_in, n_out) in enumerate(zip(
 
     ae = Sequential()
 
-    encoder = Dense(input_dim=n_in, output_dim=n_out,
-                    activation='sigmoid')
+    # encoder = Dense(input_dim=n_in, output_dim=n_out,
+    #                 activation='sigmoid')
+    encoder = containers.Sequential([
+        GaussianNoise(noise_layers[i - 1], input_shape=(n_in,)),
+        Dense(input_dim=n_in, output_dim=n_out,
+              activation='sigmoid', init='uniform'),
+    ])
     decoder = Dense(input_dim=n_out, output_dim=n_in,
                     activation='sigmoid')
 
     ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
                        output_reconstruction=False))
-    ae.compile(loss='mean_squared_error', optimizer='rmsprop')
+    ae.compile(loss='mean_squared_error', optimizer='adadelta')
 
     pretraining_history = LossHistory()
     ae.fit(input_data, input_data, batch_size=batch_size,
            nb_epoch=epochs, callbacks=[pretraining_history])
 
-    encoders.append(ae.layers[0].encoder)
+    encoders.append(ae.layers[0].encoder.layers[1])
+    noises.append(ae.layers[0].encoder.layers[0])
     input_data = ae.predict(input_data)
 
 model = Sequential()
-for i, encoder in enumerate(encoders):
-    model.add(GaussianNoise(noise_layers[i], input_shape=(hidden_layers[i],)))
-    model.add(encoders[i])
+for encoder, noise in zip(encoders, noises):
+    # model.add(GaussianNoise(noise_layers[i],
+    #                         input_shape=(hidden_layers[i],)))
+    model.add(noise)
+    model.add(encoder)
 
 model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
                 activation='softmax'))
 
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+model.compile(loss='categorical_crossentropy', optimizer='adadelta')
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
@@ -140,9 +153,6 @@ model.fit(
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
-y_prob = model.predict_proba(X_test)
-import pdb
-pdb.set_trace()
 
 metrics = {}
 metrics['accuracy'] = accuracy_score(y_test, y_pred)
@@ -151,7 +161,7 @@ metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(y_test, y_prob)
+    roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
 for key, value in metrics.items():
@@ -198,4 +208,7 @@ plt.title('Finetune loss history')
 plt.plot(finetune_history.losses)
 plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 
+end_time = timeit.default_timer()
+
 print('Done!')
+print('Run for %.2fm' % ((end_time - start_time) / 60.0))
