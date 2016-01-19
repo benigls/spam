@@ -4,7 +4,7 @@
 # NOTE: WELCOME BACK BEN!
 # Ang pangit ng code mo sa preprocess ang daming bug.
 # Sana maintindihan mo parin kahit walang comment.
-# Masyadong spare yung feature vector pag maikli yung input data.
+# Masyadong sparse yung feature vector pag maikli yung input data.
 # Yung metrics mo ang baba parin.
 # at masyado nang mahaba yung main file mo, gawa ka bago module.
 # Yung mga iniwang mong failing test iupdate mo na.
