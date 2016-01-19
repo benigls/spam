@@ -2,6 +2,10 @@
 __pycache__
 
 *.csv
+*.npz
+
+secrets.json
+db.sqlite3
 
 enron_dataset/
 data/

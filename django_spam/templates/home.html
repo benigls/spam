@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>________</h1>
+    <form method="POST" id="form">
+        {% csrf_token %}
+        Subject:
+        <br />
+        <input id="subject" name="subject" type="text" placeholder="Subject" />
+        <br />
+        <br />
+        Body:
+        <br />
+        <textarea id="body" name="body" minlength=1 rows="20" cols="60" placeholder="Body" required ></textarea>
+        <br />
+        <br />
+        <input type="submit" value="Classify" />
+    </form>
+    <h3 id="label"></h3>
+{% endblock %}
+
+{% block js %}
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.min.js'></script>
+
+<script>
+    $('#form').on('submit', function(e){
+        e.preventDefault();
+        classify();
+    });
+
+    function classify() {
+        $('#label').text('');
+        $('#label').text('pR0c3$$Inq...');
+        $.ajax({
+            url : 'classify/',
+            type : 'POST',
+            data : {
+                subject : $('#subject').val().trim(),
+                body : $('#body').val().trim(),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }
+        }).done(function(json) {
+            $('#label').text('');
+            $('#label').text(json.label);
+        }).error(function(xhr, errmsg, err) {
+            $('#label').text('$3Rv3R 3rR0r!');
+            console.log('XHR: ' + xhr)
+            console.log('ERRMSG: ' + errmsg)
+            console.log('ERR: ' + err)
+        })
+    }
+</script>
+{% endblock %}
