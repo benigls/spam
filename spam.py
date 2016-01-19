@@ -172,9 +172,10 @@ model.save_weights('{}/model_weights.hdf5'
 with open('{}/metrics.json'.format(exp_dir), 'w') as f:
     json.dump(metrics, f, indent=4)
 
-with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
-    vocabulary = [w for w in TOKENIZER.word_counts]
-    json.dump(vocabulary, f)
+if CONFIG['npz']['generate']:
+    with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
+        vocabulary = [w for w in TOKENIZER.word_counts]
+        json.dump(vocabulary, f)
 
 plt.figure(1)
 plt.title('Receiver Operating Characteristic')
