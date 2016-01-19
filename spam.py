@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# NOTE: WELCOME BACK BEN!
+# Ang pangit ng code mo sa preprocess ang daming bug.
+# Sana maintindihan mo parin kahit walang comment.
+# Masyadong spare yung feature vector pag maikli yung input data.
+# Yung metrics mo ang baba parin.
+# at masyado nang mahaba yung main file mo, gawa ka bago module.
+# Yung mga iniwang mong failing test iupdate mo na.
+# Yung bug list mo sa keep iresolve mo na.
+# Welcome back ulit :*
+
 import sys
 import os
 import argparse
@@ -139,7 +149,7 @@ metrics['recall'] = recall_score(Y_true, y_pred)
 metrics['f1'] = f1_score(Y_true, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(y_test, y_pred)
+    roc_curve(Y_true, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
 for key, value in metrics.items():
