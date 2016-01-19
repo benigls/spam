@@ -33,7 +33,7 @@ max_len = 800
 max_words = 1000
 batch_size = 256
 classes = 2
-epochs = 2
+epochs = 20
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -86,11 +86,11 @@ X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 Y_train = np_utils.to_categorical(y_train, classes)
 Y_test = np_utils.to_categorical(y_test, classes)
 
-# NPZ_DEST = 'data/npz'
-# print('Exporting npz files inside {}'.format(NPZ_DEST))
-# np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
-# np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
-# np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
+NPZ_DEST = 'data/npz'
+print('Exporting npz files inside {}'.format(NPZ_DEST))
+np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
+np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
+np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
@@ -168,8 +168,8 @@ for key, value in metrics.items():
     print('{}: {}'.format(key, value))
 
 print('\n{}\n'.format('-' * 50))
-print('Saving config results inside experiments/100_exp/')
 exp_dir = 'experiments/exp_{}'.format(exp_num)
+print('Saving config results inside {}'.format(exp_dir))
 os.makedirs(exp_dir, exist_ok=True)
 
 open('{}/model_structure.json'.format(exp_dir), 'w') \
