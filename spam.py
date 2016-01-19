@@ -192,8 +192,8 @@ plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 # print('Updating config id..')
 # CONFIG['id'] += 1
 
-with open(CONFIG_FILENAME, 'w+') as f:
-    json.dump(CONFIG, f, indent=4)
+# with open(CONFIG_FILENAME, 'w+') as f:
+#     json.dump(CONFIG, f, indent=4)
 
 print('Done!')
 
