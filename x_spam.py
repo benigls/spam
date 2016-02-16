@@ -156,6 +156,25 @@ print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
 metrics = {}
+data_meta = {}
+
+data_meta['unlabeled_count'] = len(X_unlabel)
+data_meta['labeled_count'] = len(X_train) + len(X_test)
+data_meta['train_data'] = {}
+data_meta['test_data'] = {}
+
+data_meta['train_data']['spam_count'] = int(sum(y_train))
+data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
+data_meta['train_data']['total_count'] = \
+    data_meta['train_data']['spam_count'] + \
+    data_meta['train_data']['ham_count']
+
+data_meta['test_data']['spam_count'] = int(sum(y_test))
+data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
+data_meta['test_data']['total_count'] = \
+    data_meta['test_data']['spam_count'] + \
+    data_meta['test_data']['ham_count']
+
 conf_matrix = confusion_matrix(y_test, y_pred)
 
 metrics['true_positive'], metrics['true_negative'], \
@@ -188,6 +207,9 @@ model.save_weights('{}/model_weights.hdf5'
 
 with open('{}/metrics.json'.format(exp_dir), 'w') as f:
     json.dump(metrics, f, indent=4)
+
+with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
+    json.dump(data_meta, f, indent=4)
 
 with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
     vocabulary = [w for w in tokenizer.word_counts]
