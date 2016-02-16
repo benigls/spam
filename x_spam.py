@@ -19,7 +19,8 @@ from keras.callbacks import Callback
 from keras.utils import np_utils
 
 from sklearn.metrics import (precision_score, recall_score, auc,
-                             f1_score, accuracy_score, roc_curve)
+                             f1_score, accuracy_score, roc_curve,
+                             confusion_matrix)
 
 from spam.common import utils
 
@@ -28,12 +29,12 @@ start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
-exp_num = 113
+exp_num = 100
 max_len = 800
 max_words = 1000
 batch_size = 256
 classes = 2
-epochs = 200
+epochs = 2
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -155,6 +156,13 @@ print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
 metrics = {}
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+metrics['true_positive'], metrics['true_negative'], \
+    metrics['false_positive'], metrics['false_negative'] = \
+    int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
+    int(conf_matrix[0][1]), int(conf_matrix[1][0])
+
 metrics['accuracy'] = accuracy_score(y_test, y_pred)
 metrics['precision'] = precision_score(y_test, y_pred)
 metrics['recall'] = recall_score(y_test, y_pred)
