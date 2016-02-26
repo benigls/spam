@@ -20,7 +20,7 @@ from keras.utils import np_utils
 
 from sklearn.metrics import (precision_score, recall_score, auc,
                              f1_score, accuracy_score, roc_curve,
-                             confusion_matrix)
+                             confusion_matrix, matthews_corrcoef)
 
 from spam.common import utils
 
@@ -32,9 +32,9 @@ np.random.seed(1337)
 exp_num = 100
 max_len = 800
 max_words = 1000
-batch_size = 256
+batch_size = 128
 classes = 2
-epochs = 2
+epochs = 20
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -75,17 +75,18 @@ tokenizer.fit_on_texts(x_unlabel)
 y_train = np.asarray(y_train, dtype='int32')
 y_test = np.asarray(y_test, dtype='int32')
 
-X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
+X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode='tfidf')
 X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
-X_train = tokenizer.texts_to_sequences(x_train)
+X_train = tokenizer.texts_to_matrix(x_train, mode='tfidf')
 X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
-X_test = tokenizer.texts_to_sequences(x_test)
+X_test = tokenizer.texts_to_matrix(x_test, mode='tfidf')
 X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
 Y_train = np_utils.to_categorical(y_train, classes)
 Y_test = np_utils.to_categorical(y_test, classes)
+
 
 NPZ_DEST = 'data/npz'
 print('Exporting npz files inside {}'.format(NPZ_DEST))
@@ -98,6 +99,8 @@ print('Building model..')
 
 encoders = []
 noises = []
+pretraining_history = []
+
 input_data = np.copy(X_unlabel)
 
 for i, (n_in, n_out) in enumerate(zip(
@@ -107,8 +110,6 @@ for i, (n_in, n_out) in enumerate(zip(
 
     ae = Sequential()
 
-    # encoder = Dense(input_dim=n_in, output_dim=n_out,
-    #                 activation='sigmoid')
     encoder = containers.Sequential([
         GaussianNoise(noise_layers[i - 1], input_shape=(n_in,)),
         Dense(input_dim=n_in, output_dim=n_out,
@@ -121,19 +122,18 @@ for i, (n_in, n_out) in enumerate(zip(
                        output_reconstruction=False))
     ae.compile(loss='mean_squared_error', optimizer='adadelta')
 
-    pretraining_history = LossHistory()
+    temp_history = LossHistory()
     ae.fit(input_data, input_data, batch_size=batch_size,
-           nb_epoch=epochs, callbacks=[pretraining_history])
+           nb_epoch=epochs, callbacks=[temp_history])
 
+    pretraining_history += temp_history.losses
     encoders.append(ae.layers[0].encoder.layers[1])
     noises.append(ae.layers[0].encoder.layers[0])
     input_data = ae.predict(input_data)
 
 model = Sequential()
 for encoder, noise in zip(encoders, noises):
-    # model.add(GaussianNoise(noise_layers[i],
-    #                         input_shape=(hidden_layers[i],)))
-    model.add(noise)
+    # model.add(noise)
     model.add(encoder)
 
 model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
@@ -186,6 +186,7 @@ metrics['accuracy'] = accuracy_score(y_test, y_pred)
 metrics['precision'] = precision_score(y_test, y_pred)
 metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
+metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
     roc_curve(y_test, y_pred)
@@ -230,7 +231,7 @@ plt.savefig('{}/roc_curve.png'.format(exp_dir))
 # TODO: add labels to loss history
 plt.figure(2)
 plt.title('Pretraining loss history')
-plt.plot(pretraining_history.losses)
+plt.plot(pretraining_history)
 plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
 
 plt.figure(3)
