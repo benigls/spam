@@ -4,9 +4,9 @@
 import numpy as np
 
 from keras.models import Sequential
-# from keras.layers import containers
+from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
-# from keras.layers.noise import GaussianNoise
+from keras.layers.noise import GaussianNoise
 from keras.utils import np_utils
 
 
@@ -22,7 +22,9 @@ class StackedDenoisingAutoEncoder:
         self.classes = kwargs.pop('classes', 1)
         self.hidden_layers = kwargs.pop('hidden_layers', None)
         self.noise_layers = kwargs.pop('noise_layers', None)
-        self.n_folds = kwargs.pop('n_folds', 1)
+        self.pretr_activ = kwargs.pop('pretraining_activation', 'sigmoid')
+        self.pretr_opt = kwargs.pop('pretraining_optimizer', 'adadelta')
+        self.pretr_loss = kwargs.pop('pretraining_loss', 'mse')
         self.dataset = self.get_dataset()
 
         for key, item in kwargs.items():
@@ -41,11 +43,6 @@ class StackedDenoisingAutoEncoder:
 
         test_data = np.load('{}/test.npz'.format(prefix))
         X_test, y_test = test_data['X'], test_data['y']
-
-        X_train = X_train.astype('float32')
-        X_test = X_test.astype('float32')
-        # X_train = X_train.reshape(-1, self.hidden_layers[0])
-        # X_test = X_test.reshape(-1, self.hidden_layers[0])
 
         Y_train = np_utils.to_categorical(y_train, self.classes)
         Y_true = np.asarray(y_test, dtype='int32')
@@ -72,23 +69,20 @@ class StackedDenoisingAutoEncoder:
             # build the denoising autoencoder model structure
             ae = Sequential()
 
-            # GaussianNoise(self.noise_layers[i - 1],
-            #               input_shape=(n_in,)),
-
-            # build the encoder with the gaussian noise
-            encoder = Dense(input_dim=n_in, output_dim=n_out,
-                            activation='sigmoid')
-
-            # build the decoder
+            encoder = containers.Sequential([
+                GaussianNoise(self.noise_layers[i - 1], input_shape=(n_in,)),
+                Dense(input_dim=n_in, output_dim=n_out,
+                      activation=self.pretr_activ, init='uniform'),
+            ])
             decoder = Dense(input_dim=n_out, output_dim=n_in,
-                            activation='sigmoid')
+                            activation=self.pretr_activ)
 
             # build the denoising autoencoder
             ae.add(AutoEncoder(
                 encoder=encoder, decoder=decoder,
                 output_reconstruction=False,
             ))
-            ae.compile(loss='mean_squared_error', optimizer='sgd')
+            ae.compile(loss=self.pretr_loss, optimizer=self.pretr_opt)
 
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.

@@ -10,11 +10,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.metrics import (precision_score, recall_score,
+from sklearn.metrics import (precision_score, recall_score, auc,
                              f1_score, accuracy_score, roc_curve,
-                             auc)
-from spam.common import utils
+                             confusion_matrix, matthews_corrcoef)
 
+from spam.common import utils
 from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
 
@@ -73,11 +73,14 @@ if CONFIG['npz']['generate']:
         utils.split_dataset(dataset['body'].values,
                             dataset['label'].values)
 
+    y_train = np.assarray(y_train, dtype='int32')
+    y_test = np.assarray(y_test, dtype='int32')
+
     print('Generating feature matrix..')
     X_unlabel, X_train, X_test = preprocess.feature_matrix(
         dataset=[x_unlabel, x_train, x_test, ],
         max_words=CONFIG['preprocess']['max_words'],
-        max_features=CONFIG['preprocess']['max_features']
+        max_len=CONFIG['preprocess']['max_len']
     )
 
     print('Exporting npz files inside {}'.format(NPZ_DEST))
@@ -91,7 +94,6 @@ sda = StackedDenoisingAutoEncoder(
     batch_size=CONFIG['model']['batch_size'],
     classes=CONFIG['model']['classes'],
     epochs=CONFIG['model']['epochs'],
-    n_folds=CONFIG['model']['n_folds'],
     hidden_layers=CONFIG['model']['hidden_layers'],
     noise_layers=CONFIG['model']['noise_layers'],
 )
