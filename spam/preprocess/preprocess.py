@@ -5,16 +5,12 @@ A set of function that cleans the dataset
 for machine learning process.
 """
 
-import re
 import sys
-
-import enchant
 
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from nltk import tokenize
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 
 
 def tokenizer(text):
@@ -26,26 +22,21 @@ def regex(text):
     """ Remove all words except alphanumeric characters and
     remove the `Subject:`
     """
-    clean_text = re.sub('Subject:', '', text)
-    return ' '.join([w for w in tokenizer(clean_text) if w.isalnum()])
+    return ' '.join([w for w in tokenizer(text) if w.isalnum()])
 
 
 def remove_stopwords(word_list):
     """ A function that remove stopwords from a list of words
     and lemmatize it and remove mispelled words.
     """
-    lemma = WordNetLemmatizer()
-    d = enchant.Dict('en_US')
-    words = [w for w in word_list if d.check(w)]
-    return [lemma.lemmatize(word) for word in words
+    return [word for word in word_list
             if word not in stopwords.words('english')]
 
 
-def clean_text(subject, body):
+def clean_text(text):
     """ A function that cleans text (regex, token, stop). """
-    subject_list = remove_stopwords(tokenizer(regex(subject)))
-    body_list = remove_stopwords(tokenizer(regex(body)))
-    return ' '.join(subject_list), ' '.join(body_list)
+    text_list = remove_stopwords(tokenizer(regex(text)))
+    return ' '.join(text_list)
 
 
 def static_vars(**kwargs):
@@ -63,7 +54,7 @@ def read_email(path, clean=True):
     with open(path, 'r', encoding='iso-8859-1') as file:
         try:
             content = file.readlines()
-            subject = content.pop(0)
+            content.pop(0)
             body = ''.join(content)
 
             read_email.success += 1
@@ -79,12 +70,12 @@ def read_email(path, clean=True):
     sys.stdout.flush()
 
     if clean:
-        subject, body = clean_text(subject, body)
+        body = clean_text(body)
 
-    return subject, body
+    return body
 
 
-def feature_matrix(dataset=None, max_words=5000, max_features=600):
+def feature_matrix(dataset=None, max_words=5000, max_len=800, mode='tfidf'):
     """ Transforms panda series to count matrix and normalize it. """
     clean = lambda words: [str(word)
                            for word in words
@@ -95,15 +86,15 @@ def feature_matrix(dataset=None, max_words=5000, max_features=600):
     x_test = clean(dataset[2])
 
     tokenizer = Tokenizer(nb_words=max_words)
-    tokenizer.fit_on_texts(x_unlabel + x_train + x_test)
+    tokenizer.fit_on_texts(x_unlabel)
 
-    X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
-    X_unlabel = pad_sequences(X_unlabel, maxlen=max_features, dtype='int32')
+    X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode=mode)
+    X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
-    X_train = tokenizer.texts_to_sequences(x_train)
-    X_train = pad_sequences(X_train, maxlen=max_features, dtype='int32')
+    X_train = tokenizer.texts_to_matrix(x_train, mode=mode)
+    X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
-    X_test = tokenizer.texts_to_sequences(x_test)
-    X_test = pad_sequences(X_test, maxlen=max_features, dtype='int32')
+    X_test = tokenizer.texts_to_matrix(x_test, mode=mode)
+    X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
-    return X_unlabel, X_train, X_test
+    return X_unlabel, X_train, X_test, tokenizer.word_counts

@@ -3,6 +3,7 @@
 
 import os
 import json
+import timeit
 
 import numpy as np
 import pandas as pd
@@ -18,20 +19,24 @@ from keras.callbacks import Callback
 from keras.utils import np_utils
 
 from sklearn.metrics import (precision_score, recall_score, auc,
-                             f1_score, accuracy_score, roc_curve)
+                             f1_score, accuracy_score, roc_curve,
+                             confusion_matrix, matthews_corrcoef)
 
 from spam.common import utils
 
 
+start_time = timeit.default_timer()
+
 np.random.seed(1337)
 
+exp_num = 100
 max_len = 800
-max_words = 20000
-batch_size = 64
+max_words = 1000
+batch_size = 128
 classes = 2
-epochs = 2
-hidden_layers = [800, 600, 400, 300, ]
-noise_layers = [0.6, 0.4, 0.3, ]
+epochs = 20
+hidden_layers = [800, 500, 300, ]
+noise_layers = [0.6, 0.4, ]
 
 clean = lambda words: [str(word)
                        for word in words
@@ -67,44 +72,74 @@ x_unlabel, x_train, x_test = \
 tokenizer = Tokenizer(nb_words=max_words)
 tokenizer.fit_on_texts(x_unlabel)
 
-X_unlabel = tokenizer.texts_to_sequences(x_unlabel)
+y_train = np.asarray(y_train, dtype='int32')
+y_test = np.asarray(y_test, dtype='int32')
+
+X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode='tfidf')
 X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
 
-X_train = tokenizer.texts_to_sequences(x_train)
+X_train = tokenizer.texts_to_matrix(x_train, mode='tfidf')
 X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
 
-X_test = tokenizer.texts_to_sequences(x_test)
+X_test = tokenizer.texts_to_matrix(x_test, mode='tfidf')
 X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
 Y_train = np_utils.to_categorical(y_train, classes)
-Y_true = np.asarray(y_test, dtype='int32')
 Y_test = np_utils.to_categorical(y_test, classes)
+
+
+NPZ_DEST = 'data/npz'
+print('Exporting npz files inside {}'.format(NPZ_DEST))
+np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
+np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
+np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
 
-ae = Sequential()
+encoders = []
+noises = []
+pretraining_history = []
 
-encoder = containers.Sequential([
-    GaussianNoise(0.5, input_shape=(800,)),
-    Dense(input_dim=800, output_dim=400,
-          activation='sigmoid', init='uniform')
-])
-decoder = Dense(input_dim=400, output_dim=800,
-                activation='sigmoid')
+input_data = np.copy(X_unlabel)
 
-ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
-                   output_reconstruction=False))
-ae.compile(loss='mean_squared_error', optimizer='sgd')
+for i, (n_in, n_out) in enumerate(zip(
+        hidden_layers[:-1], hidden_layers[1:]), start=1):
+    print('Training layer {}: {} Layers -> {} Layers'
+          .format(i, n_in, n_out))
 
-pretraining_history = LossHistory()
-ae.fit(X_unlabel, X_unlabel, batch_size=batch_size,
-       nb_epoch=epochs, callbacks=[pretraining_history], )
+    ae = Sequential()
+
+    encoder = containers.Sequential([
+        GaussianNoise(noise_layers[i - 1], input_shape=(n_in,)),
+        Dense(input_dim=n_in, output_dim=n_out,
+              activation='sigmoid', init='uniform'),
+    ])
+    decoder = Dense(input_dim=n_out, output_dim=n_in,
+                    activation='sigmoid')
+
+    ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
+                       output_reconstruction=False))
+    ae.compile(loss='mean_squared_error', optimizer='adadelta')
+
+    temp_history = LossHistory()
+    ae.fit(input_data, input_data, batch_size=batch_size,
+           nb_epoch=epochs, callbacks=[temp_history])
+
+    pretraining_history += temp_history.losses
+    encoders.append(ae.layers[0].encoder.layers[1])
+    noises.append(ae.layers[0].encoder.layers[0])
+    input_data = ae.predict(input_data)
 
 model = Sequential()
-model.add(ae.layers[0].encoder)
-model.add(Dense(input_dim=400, output_dim=classes, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='sgd')
+for encoder, noise in zip(encoders, noises):
+    # model.add(noise)
+    model.add(encoder)
+
+model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
+                activation='softmax'))
+
+model.compile(loss='categorical_crossentropy', optimizer='adadelta')
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
@@ -121,13 +156,40 @@ print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
 metrics = {}
+data_meta = {}
+
+data_meta['unlabeled_count'] = len(X_unlabel)
+data_meta['labeled_count'] = len(X_train) + len(X_test)
+data_meta['train_data'] = {}
+data_meta['test_data'] = {}
+
+data_meta['train_data']['spam_count'] = int(sum(y_train))
+data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
+data_meta['train_data']['total_count'] = \
+    data_meta['train_data']['spam_count'] + \
+    data_meta['train_data']['ham_count']
+
+data_meta['test_data']['spam_count'] = int(sum(y_test))
+data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
+data_meta['test_data']['total_count'] = \
+    data_meta['test_data']['spam_count'] + \
+    data_meta['test_data']['ham_count']
+
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+metrics['true_positive'], metrics['true_negative'], \
+    metrics['false_positive'], metrics['false_negative'] = \
+    int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
+    int(conf_matrix[0][1]), int(conf_matrix[1][0])
+
 metrics['accuracy'] = accuracy_score(y_test, y_pred)
 metrics['precision'] = precision_score(y_test, y_pred)
 metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
+metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(Y_true, y_pred)
+    roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
 for key, value in metrics.items():
@@ -135,7 +197,7 @@ for key, value in metrics.items():
 
 print('\n{}\n'.format('-' * 50))
 print('Saving config results inside experiments/100_exp/')
-exp_dir = 'experiments/exp_100'
+exp_dir = 'experiments/exp_{}'.format(exp_num)
 os.makedirs(exp_dir, exist_ok=True)
 
 open('{}/model_structure.json'.format(exp_dir), 'w') \
@@ -146,6 +208,9 @@ model.save_weights('{}/model_weights.hdf5'
 
 with open('{}/metrics.json'.format(exp_dir), 'w') as f:
     json.dump(metrics, f, indent=4)
+
+with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
+    json.dump(data_meta, f, indent=4)
 
 with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
     vocabulary = [w for w in tokenizer.word_counts]
@@ -166,7 +231,7 @@ plt.savefig('{}/roc_curve.png'.format(exp_dir))
 # TODO: add labels to loss history
 plt.figure(2)
 plt.title('Pretraining loss history')
-plt.plot(pretraining_history.losses)
+plt.plot(pretraining_history)
 plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
 
 plt.figure(3)
@@ -174,4 +239,7 @@ plt.title('Finetune loss history')
 plt.plot(finetune_history.losses)
 plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 
+end_time = timeit.default_timer()
+
 print('Done!')
+print('Run for %.2fm' % ((end_time - start_time) / 60.0))
