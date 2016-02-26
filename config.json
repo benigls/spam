@@ -1,12 +1,16 @@
 {
     "id": 100,
     "csv": {
-        "generate": false,
-        "dest": "data/csv"
+        "generate": true,
+        "path": "data/csv",
+        "name": "dataset"
     },
     "npz": {
-        "generate": false,
-        "dest": "data/npz"
+        "generate": true,
+        "path": "data/npz",
+        "unlabel_data_name": "unlabel",
+        "train_data_name": "train",
+        "test_data_name": "test"
     },
     "dataset": {
         "path": "enron_dataset",

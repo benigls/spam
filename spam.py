@@ -41,8 +41,9 @@ CONFIG, CONFIG_FILENAME = parse_config()
 if not CONFIG:
     sys.exit()
 
-NPZ_DEST = CONFIG['npz']['dest']
-CSV_DEST = CONFIG['csv']['dest']
+NPZ = CONFIG['npz']
+CSV = CONFIG['csv']
+MODEL = CONFIG['model']
 
 if CONFIG['csv']['generate']:
     file_path_list = utils.get_file_path_list(
@@ -58,15 +59,15 @@ if CONFIG['csv']['generate']:
     dataset = pd.DataFrame(**utils.df_params(paths, labels))
 
     print('\nExporting dataframe into a csv file inside {}'
-          .format(CSV_DEST))
-    dataset.to_csv('{}/dataset.csv'.format(CSV_DEST))
+          .format(CSV['path']))
+    dataset.to_csv('{}/{}.csv'.format(CSV['path'], CSV['name']))
 
 if CONFIG['npz']['generate']:
     print('\n{}\n'.format('-' * 50))
     print('Reading csv files..')
-    dataset = pd.read_csv('{}/dataset.csv'
-                          .format(CSV_DEST),
-                          encoding='iso-8859-1')
+    dataset = pd.read_csv(
+        '{}/{}.csv'.format(CSV['path'], CSV['name']),
+        encoding='iso-8859-1')
 
     print('Spliting the dataset..')
     x_unlabel, (x_train, y_train), (x_test, y_test) = \
@@ -83,10 +84,16 @@ if CONFIG['npz']['generate']:
         max_len=CONFIG['preprocess']['max_len']
     )
 
-    print('Exporting npz files inside {}'.format(NPZ_DEST))
-    np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
-    np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
-    np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
+    print('Exporting npz files inside {}'.format(NPZ['path']))
+    np.savez(
+        '{}/{}.npz'.format(NPZ['path'], NPZ['unlabel_data_name']),
+        X=X_unlabel)
+    np.savez(
+        '{}/{}.npz'.format(NPZ['path'], NPZ['train_data_name']),
+        X=X_train, y=y_train)
+    np.savez(
+        '{}/{}.npz'.format(NPZ['path'], NPZ['test_data_name']),
+        X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
