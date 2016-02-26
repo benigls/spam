@@ -57,7 +57,7 @@ def read_email(path, clean=True):
     with open(path, 'r', encoding='iso-8859-1') as file:
         try:
             content = file.readlines()
-            subject = content.pop(0)
+            content.pop(0)
             body = ''.join(content)
 
             read_email.success += 1
@@ -73,9 +73,9 @@ def read_email(path, clean=True):
     sys.stdout.flush()
 
     if clean:
-        subject, body = clean_text(subject, body)
+        body = clean_text(body)
 
-    return subject, body
+    return body
 
 
 def feature_matrix(dataset=None, max_words=5000, max_len=800, mode='tfidf'):
