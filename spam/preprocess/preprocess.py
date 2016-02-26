@@ -8,13 +8,10 @@ for machine learning process.
 import re
 import sys
 
-import enchant
-
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from nltk import tokenize
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 
 
 def tokenizer(text):
@@ -34,10 +31,7 @@ def remove_stopwords(word_list):
     """ A function that remove stopwords from a list of words
     and lemmatize it and remove mispelled words.
     """
-    lemma = WordNetLemmatizer()
-    d = enchant.Dict('en_US')
-    words = [w for w in word_list if d.check(w)]
-    return [lemma.lemmatize(word) for word in words
+    return [word for word in word_list
             if word not in stopwords.words('english')]
 
 
