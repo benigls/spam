@@ -16,7 +16,7 @@ from sklearn.metrics import (precision_score, recall_score, auc,
 
 from spam.common import utils
 from spam.preprocess import preprocess
-from spam.deeplearning import StackedDenoisingAutoEncoder
+from spam.deeplearning import StackedDenoisingAutoEncoder, LossHistory
 
 
 def parse_config():
@@ -77,7 +77,7 @@ if CONFIG['npz']['generate']:
     y_test = np.assarray(y_test, dtype='int32')
 
     print('Generating feature matrix..')
-    X_unlabel, X_train, X_test = preprocess.feature_matrix(
+    X_unlabel, X_train, X_test, vocabulary = preprocess.feature_matrix(
         dataset=[x_unlabel, x_train, x_test, ],
         max_words=CONFIG['preprocess']['max_words'],
         max_len=CONFIG['preprocess']['max_len']
@@ -97,44 +97,94 @@ sda = StackedDenoisingAutoEncoder(
     hidden_layers=CONFIG['model']['hidden_layers'],
     noise_layers=CONFIG['model']['noise_layers'],
 )
-model = sda.build_sda()
+model, pretraining_history = sda.build_sda()
 
 model.add(sda.build_finetune())
 
-model.compile(loss='categorical_crossentropy', optimizer='sgd')
+model.compile(loss=CONFIG['model']['finetune_loss'],
+              optimizer=CONFIG['model']['finetune_optimizer'])
 
 X_train, Y_train = sda.dataset['train']
 X_test, Y_test, Y_true = sda.dataset['test']
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
-history = model.fit(
+
+finetune_history = LossHistory()
+model.fit(
     X_train, Y_train, batch_size=sda.batch_size,
     nb_epoch=sda.epochs, show_accuracy=True,
     validation_data=(X_test, Y_test), validation_split=0.1,
+    callbacks=[finetune_history],
 )
 
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = model.predict_classes(X_test)
 
-accuracy = accuracy_score(Y_true, y_pred)
-precision = precision_score(Y_true, y_pred)
-recall = recall_score(Y_true, y_pred)
-f1 = f1_score(Y_true, y_pred)
+metrics = {}
+data_meta = {}
+
+data_meta['unlabeled_count'] = len(X_unlabel)
+data_meta['labeled_count'] = len(X_train) + len(X_test)
+data_meta['train_data'] = {}
+data_meta['test_data'] = {}
+
+data_meta['train_data']['spam_count'] = int(sum(y_train))
+data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
+data_meta['train_data']['total_count'] = \
+    data_meta['train_data']['spam_count'] + \
+    data_meta['train_data']['ham_count']
+
+data_meta['test_data']['spam_count'] = int(sum(y_test))
+data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
+data_meta['test_data']['total_count'] = \
+    data_meta['test_data']['spam_count'] + \
+    data_meta['test_data']['ham_count']
+
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+metrics['true_positive'], metrics['true_negative'], \
+    metrics['false_positive'], metrics['false_negative'] = \
+    int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
+    int(conf_matrix[0][1]), int(conf_matrix[1][0])
+
 
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(Y_true, y_pred)
+    roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
 
-print(y_pred)
-print(Y_true)
+for key, value in metrics.items():
+    print('{}: {}'.format(key, value))
 
-print('Accuracy: {}'.format(accuracy))
-print('Precision: {}'.format(precision))
-print('Recall: {}'.format(recall))
-print('F1: {}'.format(f1))
+metrics['accuracy'] = accuracy_score(y_test, y_pred)
+metrics['precision'] = precision_score(y_test, y_pred)
+metrics['recall'] = recall_score(y_test, y_pred)
+metrics['f1'] = f1_score(y_test, y_pred)
+metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
+metrics['auc'] = roc_auc
 
+print('\n{}\n'.format('-' * 50))
+print('Saving config results inside experiments/100_exp/')
+exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
+os.makedirs(exp_dir, exist_ok=True)
+
+open('{}/model_structure.json'.format(exp_dir), 'w') \
+    .write(model.to_json())
+
+model.save_weights('{}/model_weights.hdf5'
+                   .format(exp_dir), overwrite=True)
+
+with open('{}/metrics.json'.format(exp_dir), 'w') as f:
+    json.dump(metrics, f, indent=4)
+
+with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
+    json.dump(data_meta, f, indent=4)
+
+with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
+    json.dump(vocabulary, f)
+
+plt.figure(1)
 plt.title('Receiver Operating Characteristic')
 plt.plot(false_positive_rate, true_positive_rate, 'b',
          label='AUC = {}'.format(roc_auc))
@@ -144,23 +194,18 @@ plt.xlim([-0.1, 1.2])
 plt.ylim([-0.1, 1.2])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
-plt.show()
-
-print('\n{}\n'.format('-' * 50))
-print('Saving config results inside experiments/{}_exp/ ..'
-      .format(CONFIG['id']))
-exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
-os.makedirs(exp_dir, exist_ok=True)
-
-open('{}/model_structure.json'.format(exp_dir), 'w') \
-    .write(model.to_json())
-model.save_weights('{}/model_weights.hdf5'
-                   .format(exp_dir), overwrite=True)
-
-with open('{}/config.json'.format(exp_dir), 'w') as f:
-    json.dump(CONFIG, f, indent=4)
-
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
+
+# TODO: add labels to loss history
+plt.figure(2)
+plt.title('Pretraining loss history')
+plt.plot(pretraining_history)
+plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
+
+plt.figure(3)
+plt.title('Finetune loss history')
+plt.plot(finetune_history.losses)
+plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 
 # print('Updating config id..')
 # CONFIG['id'] += 1
