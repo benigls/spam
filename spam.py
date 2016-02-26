@@ -3,7 +3,6 @@
 
 import sys
 import os
-import argparse
 import json
 
 import numpy as np
@@ -19,26 +18,15 @@ from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder, LossHistory
 
 
-def parse_config():
-    """ Parses the args and return the config file in json. """
-    try:
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-c', '--config', action='store')
-        args = parser.parse_args()
-
-        with open(args.config, 'r') as f:
-            config = json.load(f)
-
-        return config, args.config
-    except Exception as e:
-        print('Error: {}'.format(e))
-        return None, None
-
-
 np.random.seed(1337)
 
-CONFIG, CONFIG_FILENAME = parse_config()
+CONFIG_FILENAME = 'config.json'
+
+with open(CONFIG_FILENAME, 'r') as f:
+    CONFIG = json.load(f)
+
 if not CONFIG:
+    print('Can\'t read config file.')
     sys.exit()
 
 CSV = CONFIG['csv']
