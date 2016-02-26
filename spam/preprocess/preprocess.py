@@ -5,7 +5,6 @@ A set of function that cleans the dataset
 for machine learning process.
 """
 
-import re
 import sys
 
 from keras.preprocessing.text import Tokenizer
@@ -23,8 +22,7 @@ def regex(text):
     """ Remove all words except alphanumeric characters and
     remove the `Subject:`
     """
-    clean_text = re.sub('Subject:', '', text)
-    return ' '.join([w for w in tokenizer(clean_text) if w.isalnum()])
+    return ' '.join([w for w in tokenizer(text) if w.isalnum()])
 
 
 def remove_stopwords(word_list):
@@ -35,11 +33,10 @@ def remove_stopwords(word_list):
             if word not in stopwords.words('english')]
 
 
-def clean_text(subject, body):
+def clean_text(text):
     """ A function that cleans text (regex, token, stop). """
-    subject_list = remove_stopwords(tokenizer(regex(subject)))
-    body_list = remove_stopwords(tokenizer(regex(body)))
-    return ' '.join(subject_list), ' '.join(body_list)
+    text_list = remove_stopwords(tokenizer(regex(text)))
+    return ' '.join(text_list)
 
 
 def static_vars(**kwargs):
@@ -100,4 +97,4 @@ def feature_matrix(dataset=None, max_words=5000, max_len=800, mode='tfidf'):
     X_test = tokenizer.texts_to_matrix(x_test, mode=mode)
     X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
-    return X_unlabel, X_train, X_test, tokenizer.word_count
+    return X_unlabel, X_train, X_test, tokenizer.word_counts

@@ -41,7 +41,6 @@ CONFIG, CONFIG_FILENAME = parse_config()
 if not CONFIG:
     sys.exit()
 
-NPZ = CONFIG['npz']
 CSV = CONFIG['csv']
 MODEL = CONFIG['model']
 
@@ -62,38 +61,28 @@ if CONFIG['csv']['generate']:
           .format(CSV['path']))
     dataset.to_csv('{}/{}.csv'.format(CSV['path'], CSV['name']))
 
-if CONFIG['npz']['generate']:
-    print('\n{}\n'.format('-' * 50))
-    print('Reading csv files..')
-    dataset = pd.read_csv(
-        '{}/{}.csv'.format(CSV['path'], CSV['name']),
-        encoding='iso-8859-1')
 
-    print('Spliting the dataset..')
-    x_unlabel, (x_train, y_train), (x_test, y_test) = \
-        utils.split_dataset(dataset['body'].values,
-                            dataset['label'].values)
+print('\n{}\n'.format('-' * 50))
+print('Reading csv files..')
+dataset = pd.read_csv(
+    '{}/{}.csv'.format(CSV['path'], CSV['name']),
+    encoding='iso-8859-1')
 
-    y_train = np.assarray(y_train, dtype='int32')
-    y_test = np.assarray(y_test, dtype='int32')
+print('Spliting the dataset..')
+x_unlabel, (x_train, y_train), (x_test, y_test) = \
+    utils.split_dataset(dataset['body'].values,
+                        dataset['label'].values)
 
-    print('Generating feature matrix..')
-    X_unlabel, X_train, X_test, vocabulary = preprocess.feature_matrix(
-        dataset=[x_unlabel, x_train, x_test, ],
-        max_words=CONFIG['preprocess']['max_words'],
-        max_len=CONFIG['preprocess']['max_len']
-    )
+y_train = np.asarray(y_train, dtype='int32')
+y_test = np.asarray(y_test, dtype='int32')
 
-    print('Exporting npz files inside {}'.format(NPZ['path']))
-    np.savez(
-        '{}/{}.npz'.format(NPZ['path'], NPZ['unlabel_data_name']),
-        X=X_unlabel)
-    np.savez(
-        '{}/{}.npz'.format(NPZ['path'], NPZ['train_data_name']),
-        X=X_train, y=y_train)
-    np.savez(
-        '{}/{}.npz'.format(NPZ['path'], NPZ['test_data_name']),
-        X=X_test, y=y_test)
+print('Generating feature matrix..')
+X_unlabel, X_train, X_test, vocabulary = preprocess.feature_matrix(
+    dataset=[x_unlabel, x_train, x_test, ],
+    max_words=CONFIG['preprocess']['max_words'],
+    max_len=CONFIG['preprocess']['max_len']
+)
+
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
@@ -103,6 +92,7 @@ sda = StackedDenoisingAutoEncoder(
     epochs=CONFIG['model']['epochs'],
     hidden_layers=CONFIG['model']['hidden_layers'],
     noise_layers=CONFIG['model']['noise_layers'],
+    dataset=(X_unlabel, (X_train, y_train), (X_test, y_test)),
 )
 model, pretraining_history = sda.build_sda()
 
@@ -111,8 +101,9 @@ model.add(sda.build_finetune())
 model.compile(loss=CONFIG['model']['finetune_loss'],
               optimizer=CONFIG['model']['finetune_optimizer'])
 
-X_train, Y_train = sda.dataset['train']
-X_test, Y_test, Y_true = sda.dataset['test']
+X_unlabel = sda.dataset['unlabel']
+X_train, Y_train, y_train = sda.dataset['train']
+X_test, Y_test, y_test = sda.dataset['test']
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
@@ -151,12 +142,6 @@ data_meta['test_data']['total_count'] = \
 
 conf_matrix = confusion_matrix(y_test, y_pred)
 
-metrics['true_positive'], metrics['true_negative'], \
-    metrics['false_positive'], metrics['false_negative'] = \
-    int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
-    int(conf_matrix[0][1]), int(conf_matrix[1][0])
-
-
 false_positive_rate, true_positive_rate, _ = \
     roc_curve(y_test, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
@@ -170,6 +155,9 @@ metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
 metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
 metrics['auc'] = roc_auc
+
+for key, value in metrics.items():
+    print('{}: {}'.format(key, value))
 
 print('\n{}\n'.format('-' * 50))
 print('Saving config results inside experiments/100_exp/')

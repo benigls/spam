@@ -1,16 +1,9 @@
 {
     "id": 100,
     "csv": {
-        "generate": true,
+        "generate": false,
         "path": "data/csv",
         "name": "dataset"
-    },
-    "npz": {
-        "generate": true,
-        "path": "data/npz",
-        "unlabel_data_name": "unlabel",
-        "train_data_name": "train",
-        "test_data_name": "test"
     },
     "dataset": {
         "path": "enron_dataset",
@@ -31,8 +24,8 @@
         "batch_size": 128,
         "classes": 2,
         "epochs": 2,
-        "hidden_layers": [800, 500, 300, ],
-        "noise_layers": [0.6, 0.4, ],
+        "hidden_layers": [800, 500, 300],
+        "noise_layers": [0.6, 0.4],
         "pretraining_activation": "sigmoid",
         "pretraining_optimizer": "adadelta",
         "pretraining_loss": "mse",

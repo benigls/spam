@@ -40,32 +40,27 @@ class StackedDenoisingAutoEncoder:
         self.pretr_opt = kwargs.pop('pretraining_optimizer', 'adadelta')
         self.pretr_loss = kwargs.pop('pretraining_loss', 'mse')
         self.fine_activ = kwargs.pop('finetune_activation', 'softmax')
-        self.dataset = self.get_dataset()
+        self.dataset = self.get_dataset(kwargs.pop('dataset', None))
 
         for key, item in kwargs.items():
             raise IllegalArgumentError(
                 'Keyword argument {} with a value of  {}, '
                 'doesn\'t recognize.'.format(key, item))
 
-    def get_dataset(self):
+    def get_dataset(self, dataset):
         """ Get dataset and unpack it. """
-        prefix = 'data/npz'
+        X_unlabel = dataset[0]
 
-        X_unlabel = np.load('{}/unlabel.npz'.format(prefix))['X']
+        X_train, y_train = dataset[1][0], dataset[1][1]
 
-        train_data = np.load('{}/train.npz'.format(prefix))
-        X_train, y_train = train_data['X'], train_data['y']
-
-        test_data = np.load('{}/test.npz'.format(prefix))
-        X_test, y_test = test_data['X'], test_data['y']
+        X_test, y_test = dataset[2][0], dataset[2][1]
 
         Y_train = np_utils.to_categorical(y_train, self.classes)
-        Y_true = np.asarray(y_test, dtype='int32')
         Y_test = np_utils.to_categorical(y_test, self.classes)
 
         return {'unlabel': X_unlabel,
-                'train': (X_train, Y_train),
-                'test': (X_test, Y_test, Y_true), }
+                'train': (X_train, Y_train, y_train),
+                'test': (X_test, Y_test, y_test), }
 
     def build_sda(self):
         """ Build Stack Denoising Autoencoder and perform a
