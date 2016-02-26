@@ -100,4 +100,4 @@ def feature_matrix(dataset=None, max_words=5000, max_len=800, mode='tfidf'):
     X_test = tokenizer.texts_to_matrix(x_test, mode=mode)
     X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
-    return X_unlabel, X_train, X_test
+    return X_unlabel, X_train, X_test, tokenizer.word_count
