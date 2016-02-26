@@ -31,6 +31,9 @@
         "noise_layers": [0.6, 0.4, ],
         "pretraining_activation": "sigmoid",
         "pretraining_optimizer": "adadelta",
-        "pretraining_loss": "mse"
+        "pretraining_loss": "mse",
+        "finetune_activation": "softmax",
+        "finetune_optimizer": "adadelta",
+        "finetune_loss": "categorical_crossentropy"
     }
 }
