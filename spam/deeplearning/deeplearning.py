@@ -7,11 +7,25 @@ from keras.models import Sequential
 from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
+from keras.callbacks import Callback
 from keras.utils import np_utils
 
 
 class IllegalArgumentError(ValueError):
     pass
+
+
+class LossHistory(Callback):
+    def on_train_begin(self, logs=None):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs=None):
+        try:
+            loss = logs.get('loss')
+        except AttributeError:
+            loss = None
+
+        self.losses.append(loss)
 
 
 class StackedDenoisingAutoEncoder:
@@ -25,6 +39,7 @@ class StackedDenoisingAutoEncoder:
         self.pretr_activ = kwargs.pop('pretraining_activation', 'sigmoid')
         self.pretr_opt = kwargs.pop('pretraining_optimizer', 'adadelta')
         self.pretr_loss = kwargs.pop('pretraining_loss', 'mse')
+        self.fine_activ = kwargs.pop('finetune_activation', 'softmax')
         self.dataset = self.get_dataset()
 
         for key, item in kwargs.items():
@@ -57,6 +72,8 @@ class StackedDenoisingAutoEncoder:
         layer wise pre-training.
         """
         encoders = []
+        noises = []
+        pretraining_history = []
 
         input_data = np.copy(self.dataset['unlabel'])
 
@@ -84,27 +101,36 @@ class StackedDenoisingAutoEncoder:
             ))
             ae.compile(loss=self.pretr_loss, optimizer=self.pretr_opt)
 
+            temp_history = LossHistory()
+
             # train the denoising autoencoder and it will return
             # the encoded input as the input to the next layer.
+            # it also store the loss history every epochs.
             ae.fit(input_data, input_data,
-                   batch_size=self.batch_size, nb_epoch=self.epochs)
+                   batch_size=self.batch_size,
+                   nb_epoch=self.epochs,
+                   callbacks=[temp_history],)
 
-            encoders.append(ae.layers[0].encoder)
+            pretraining_history += temp_history.losses
+            encoders.append(ae.layers[0].encoder.layers[1])
+            noises.append(ae.layers[0].encoder.layers[0])
             input_data = ae.predict(input_data)
 
         # merge denoising autoencoder layers
         model = Sequential()
-        for encoder in encoders:
+        for encoder, noise in zip(encoders, noises):
+            model.add(noise)
             model.add(encoder)
 
-        return model
+        return model, pretraining_history
 
-    def build_finetune(self, activation='softmax'):
+    def build_finetune(self):
         """ Build the finetune layer for finetuning or
         supervise task.
         """
         return Dense(input_dim=self.hidden_layers[-1],
-                     output_dim=self.classes, activation=activation)
+                     output_dim=self.classes,
+                     activation=self.fine_activ)
 
     def evaluate(self, Y, y):
         """ Evaluate the predicted labels and return metrics. """
