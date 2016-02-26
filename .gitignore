@@ -6,3 +6,5 @@ __pycache__
 enron_dataset/
 data/
 experiments/
+
+config.json
