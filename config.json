@@ -20,15 +20,17 @@
         ]
     },
     "preprocess": {
-        "max_words": 20000,
-        "max_features": 800
+        "max_words": 1000,
+        "max_len": 800
     },
     "model": {
         "batch_size": 128,
         "classes": 2,
         "epochs": 2,
-        "n_folds": 4,
-        "hidden_layers": [800, 600, 400, 300 ],
-        "noise_layers": [0.6, 0.4, 0.3 ]
+        "hidden_layers": [800, 500, 300, ],
+        "noise_layers": [0.6, 0.4, ],
+        "pretraining_activation": "sigmoid",
+        "pretraining_optimizer": "adadelta",
+        "pretraining_loss": "mse"
     }
 }
