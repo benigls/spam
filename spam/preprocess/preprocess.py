@@ -5,96 +5,71 @@ A set of function that cleans the dataset
 for machine learning process.
 """
 
-import sys
-
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from nltk import tokenize
 from nltk.corpus import stopwords
 
-
-def tokenizer(text):
-    """ A function that splits a text. """
-    return tokenize.word_tokenize(text)
+from spam.common.exception import IllegalArgumentError
 
 
-def regex(text):
-    """ Remove all words except alphanumeric characters and
-    remove the `Subject:`
-    """
-    return ' '.join([w for w in tokenizer(text) if w.isalnum()])
+class Preprocess:
+    """ Preprocess class. """
+    def init(self, **kwargs):
+        self.dataset = kwargs.pop('dataset', None)
+        self.max_len = kwargs.pop('max_len', 5000)
+        self.max_words = kwargs.pop('max_words', 800)
+        self.mode = kwargs.pop('mode', 'tfidf')
+        self.csv_filename = kwargs.pop('csv_filename', None)
+        self.read_csv = kwargs.pop('read_csv', False)
+        self.vocabulary = kwargs.pop('vocabulary', None)
 
+        for key, item in kwargs.items():
+            raise IllegalArgumentError(
+                'Keyword argument {} with a value of  {}, '
+                'doesn\'t recognize.'.format(key, item))
 
-def remove_stopwords(word_list):
-    """ A function that remove stopwords from a list of words
-    and lemmatize it and remove mispelled words.
-    """
-    return [word for word in word_list
-            if word not in stopwords.words('english')]
+    def clean(self, text):
+        """ Remove words with non alphanumeric characters and
+        remove stopwords in text.
+        """
+        return ' '.join([w for w in tokenize.word_tokenize(text)
+                         if w.isalnum()
+                         if w not in stopwords.words('english')])
 
+    def clean_data(path, clean=True):
+        """ Clean data. """
+        pass
 
-def clean_text(text):
-    """ A function that cleans text (regex, token, stop). """
-    text_list = remove_stopwords(tokenizer(regex(text)))
-    return ' '.join(text_list)
+    def feature_matrix(self):
+        """ Generate feature matrix. """
+        clean = lambda words: [str(word)
+                               for word in words
+                               if type(word) is not float]
 
+        x_unlabel = clean(self.dataset[0])
+        x_train = clean(self.dataset[1])
+        x_test = clean(self.dataset[2])
 
-def static_vars(**kwargs):
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-    return decorate
+        tokenizer = Tokenizer(nb_words=self.max_words)
+        tokenizer.fit_on_texts(x_unlabel)
 
+        # save the list of words in the vocabulary
+        self.vocabulary = tokenizer.word_counts
 
-@static_vars(success=0, fail=0)
-def read_email(path, clean=True):
-    """ A function that accepts file paths and return it's contents.
-    """
-    with open(path, 'r', encoding='iso-8859-1') as file:
-        try:
-            content = file.readlines()
-            content.pop(0)
-            body = ''.join(content)
+        X_unlabel = tokenizer.texts_to_matrix(x_unlabel,
+                                              mode=self.mode)
+        X_unlabel = pad_sequences(X_unlabel, maxlen=self.max_len,
+                                  dtype='float64')
 
-            read_email.success += 1
-        except UnicodeDecodeError:
-            content = ''
-            read_email.fail += 1
+        X_train = tokenizer.texts_to_matrix(x_train, mode=self.mode)
+        X_train = pad_sequences(X_train, maxlen=self.max_len, dtype='float64')
 
-        file.close()
+        X_test = tokenizer.texts_to_matrix(x_test, mode=self.mode)
+        X_test = pad_sequences(X_test, maxlen=self.max_len, dtype='float64')
 
-    sys.stdout.write('\rSuccess: {} \t Fail: {}'.format(
-        read_email.success, read_email.fail
-    ))
-    sys.stdout.flush()
+        return X_unlabel, X_train, X_test
 
-    if clean:
-        body = clean_text(body)
-
-    return body
-
-
-def feature_matrix(dataset=None, max_words=5000, max_len=800, mode='tfidf'):
-    """ Transforms panda series to count matrix and normalize it. """
-    clean = lambda words: [str(word)
-                           for word in words
-                           if type(word) is not float]
-
-    x_unlabel = clean(dataset[0])
-    x_train = clean(dataset[1])
-    x_test = clean(dataset[2])
-
-    tokenizer = Tokenizer(nb_words=max_words)
-    tokenizer.fit_on_texts(x_unlabel)
-
-    X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode=mode)
-    X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
-
-    X_train = tokenizer.texts_to_matrix(x_train, mode=mode)
-    X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
-
-    X_test = tokenizer.texts_to_matrix(x_test, mode=mode)
-    X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
-
-    return X_unlabel, X_train, X_test, tokenizer.word_counts
+    def to_csv(self, path=None, name=None):
+        """ Export dataset into csv file. """
+        self.dataset.to_csv('{}/{}.csv'.format(path, name))

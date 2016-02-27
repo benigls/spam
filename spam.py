@@ -14,6 +14,7 @@ from sklearn.metrics import (precision_score, recall_score, auc,
                              confusion_matrix, matthews_corrcoef)
 
 from spam.common import utils
+from spam.dataset import EnronDataset
 from spam.preprocess import preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder, LossHistory
 
@@ -33,22 +34,16 @@ CSV = CONFIG['csv']
 MODEL = CONFIG['model']
 
 if CONFIG['csv']['generate']:
-    file_path_list = utils.get_file_path_list(
-        utils.dataset_meta(CONFIG['dataset']))
+    enron_dataset = EnronDataset(path=CONFIG['dataset']['path'])
 
-    # transform list of tuple into two list
-    # e.g. [('/path/to/file', 'spam')] ==> ['path/to/file'], ['spam']
-    paths, labels = zip(*file_path_list)
-
-    # generate panda dataframes and export it to csv
     print('\n{}\n'.format('-' * 50))
-    print('Generating dataframe..')
-    dataset = pd.DataFrame(**utils.df_params(paths, labels))
+    print('Reading the dataset..')
+    enron_dataset.load_dataset()
 
-    print('\nExporting dataframe into a csv file inside {}'
-          .format(CSV['path']))
-    dataset.to_csv('{}/{}.csv'.format(CSV['path'], CSV['name']))
+    print('Exporting the dataset..')
+    enron_dataset.to_csv(path='data/csv', name='dataset')
 
+sys.exit()
 
 print('\n{}\n'.format('-' * 50))
 print('Reading csv files..')

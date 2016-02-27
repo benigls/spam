@@ -10,9 +10,7 @@ from keras.layers.noise import GaussianNoise
 from keras.callbacks import Callback
 from keras.utils import np_utils
 
-
-class IllegalArgumentError(ValueError):
-    pass
+from spam.common.exception import IllegalArgumentError
 
 
 class LossHistory(Callback):
