@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
-# import os
+import os
 import json
 
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from sklearn.metrics import (precision_score, recall_score, auc,
                              f1_score, accuracy_score, roc_curve,
@@ -82,24 +82,28 @@ print('Evaluating model..')
 y_pred = sda.model.predict_classes(enron_dataset.test.X)
 
 metrics = {}
-# data_meta = {}
+data_meta = {}
 
-# data_meta['unlabeled_count'] = len(X_unlabel)
-# data_meta['labeled_count'] = len(X_train) + len(X_test)
-# data_meta['train_data'] = {}
-# data_meta['test_data'] = {}
+data_meta['unlabeled_count'] = len(enron_dataset.unlabel)
+data_meta['labeled_count'] = \
+    len(enron_dataset.train.X) + len(enron_dataset.test.X)
 
-# data_meta['train_data']['spam_count'] = int(sum(y_train))
-# data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
-# data_meta['train_data']['total_count'] = \
-#     data_meta['train_data']['spam_count'] + \
-#     data_meta['train_data']['ham_count']
+data_meta['train_data'] = {}
+data_meta['test_data'] = {}
 
-# data_meta['test_data']['spam_count'] = int(sum(y_test))
-# data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
-# data_meta['test_data']['total_count'] = \
-#     data_meta['test_data']['spam_count'] + \
-#     data_meta['test_data']['ham_count']
+data_meta['train_data']['spam_count'] = int(sum(enron_dataset.train.y))
+data_meta['train_data']['ham_count'] = \
+    int(len(enron_dataset.train.y) - sum(enron_dataset.train.y))
+data_meta['train_data']['total_count'] = \
+    data_meta['train_data']['spam_count'] + \
+    data_meta['train_data']['ham_count']
+
+data_meta['test_data']['spam_count'] = int(sum(enron_dataset.test.y))
+data_meta['test_data']['ham_count'] = \
+    int(len(enron_dataset.test.y) - sum(enron_dataset.test.y))
+data_meta['test_data']['total_count'] = \
+    data_meta['test_data']['spam_count'] + \
+    data_meta['test_data']['ham_count']
 
 conf_matrix = confusion_matrix(enron_dataset.test.y, y_pred)
 
@@ -120,48 +124,48 @@ metrics['auc'] = roc_auc
 for key, value in metrics.items():
     print('{}: {}'.format(key, value))
 
-# print('\n{}\n'.format('-' * 50))
-# print('Saving config results inside experiments/100_exp/')
-# exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
-# os.makedirs(exp_dir, exist_ok=True)
+print('\n{}\n'.format('-' * 50))
+print('Saving config results inside experiments/100_exp/')
+exp_dir = 'experiments/exp_{}'.format(CONFIG['id'])
+os.makedirs(exp_dir, exist_ok=True)
 
-# open('{}/model_structure.json'.format(exp_dir), 'w') \
-#     .write(model.to_json())
+open('{}/model_structure.json'.format(exp_dir), 'w') \
+    .write(sda.model.to_json())
 
-# model.save_weights('{}/model_weights.hdf5'
-#                    .format(exp_dir), overwrite=True)
+sda.model.save_weights('{}/model_weights.hdf5'
+                       .format(exp_dir), overwrite=True)
 
-# with open('{}/metrics.json'.format(exp_dir), 'w') as f:
-#     json.dump(metrics, f, indent=4)
+with open('{}/metrics.json'.format(exp_dir), 'w') as f:
+    json.dump(metrics, f, indent=4)
 
-# with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
-#     json.dump(data_meta, f, indent=4)
+with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
+    json.dump(data_meta, f, indent=4)
 
-# with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
-#     json.dump(vocabulary, f)
+with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
+    json.dump(vocabulary, f)
 
-# plt.figure(1)
-# plt.title('Receiver Operating Characteristic')
-# plt.plot(false_positive_rate, true_positive_rate, 'b',
-#          label='AUC = {}'.format(roc_auc))
-# plt.legend(loc='lower right')
-# plt.plot([0, 1], [0, 1], 'r--')
-# plt.xlim([-0.1, 1.2])
-# plt.ylim([-0.1, 1.2])
-# plt.ylabel('True Positive Rate')
-# plt.xlabel('False Positive Rate')
-# plt.savefig('{}/roc_curve.png'.format(exp_dir))
+plt.figure(1)
+plt.title('Receiver Operating Characteristic')
+plt.plot(false_positive_rate, true_positive_rate, 'b',
+         label='AUC = {}'.format(roc_auc))
+plt.legend(loc='lower right')
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([-0.1, 1.2])
+plt.ylim([-0.1, 1.2])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.savefig('{}/roc_curve.png'.format(exp_dir))
 
-# # TODO: add labels to loss history
-# plt.figure(2)
-# plt.title('Pretraining loss history')
-# plt.plot(pretraining_history)
-# plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
+# TODO: add labels to loss history
+plt.figure(2)
+plt.title('Pretraining loss history')
+plt.plot(pretraining_history)
+plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
 
-# plt.figure(3)
-# plt.title('Finetune loss history')
-# plt.plot(finetune_history.losses)
-# plt.savefig('{}/finetune_loss.png'.format(exp_dir))
+plt.figure(3)
+plt.title('Finetune loss history')
+plt.plot(finetune_history.losses)
+plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 
 # print('Updating config id..')
 # CONFIG['id'] += 1

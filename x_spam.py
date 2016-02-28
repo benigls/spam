@@ -6,23 +6,20 @@ import json
 import timeit
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from keras.models import Sequential
 from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import Callback
-from keras.utils import np_utils
 
 from sklearn.metrics import (precision_score, recall_score, auc,
                              f1_score, accuracy_score, roc_curve,
                              confusion_matrix, matthews_corrcoef)
 
 from spam.common import utils
+from spam.deeplearning import LossHistory
+from spam.preprocess import Preprocess
 
 
 start_time = timeit.default_timer()
@@ -30,69 +27,44 @@ start_time = timeit.default_timer()
 np.random.seed(1337)
 
 exp_num = 100
-max_len = 800
-max_words = 1000
+
+preprocess_params = {
+    'max_words': 1000,
+    'max_len': 800,
+    'mode': 'tfidf',
+    'read_csv': True,
+    'read_csv_filepath': 'data/csv/clean_dataset.csv',
+    'classes': 2,
+}
+
+epochs = 50
 batch_size = 128
 classes = 2
-epochs = 20
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
+pretr_activ = 'sigmoid'
+pretr_opt = 'adadelta'
+pretr_loss = 'mse'
+fine_activ = 'softmax'
+fine_opt = 'adadelta'
+fine_loss = 'categorical_crossentropy'
 
 clean = lambda words: [str(word)
                        for word in words
                        if type(word) is not float]
 
-
-class LossHistory(Callback):
-    def on_train_begin(self, logs=None):
-        self.losses = []
-
-    def on_batch_end(self, batch, logs=None):
-        try:
-            loss = logs.get('loss')
-        except AttributeError:
-            loss = None
-
-        self.losses.append(loss)
-
-
 print('\n{}\n'.format('-' * 50))
-print('Reading csv files..')
-dataset = pd.read_csv('data/csv/dataset.csv', encoding='iso-8859-1')
+print('Reading the dataset..')
+preprocessor = Preprocess(**preprocess_params)
 
 print('Spliting the dataset..')
-x_unlabel, (x_train, y_train), (x_test, y_test) = \
-    utils.split_dataset(dataset['body'].values,
-                        dataset['label'].values)
+enron_dataset = preprocessor.dataset
+enron_dataset = utils.split_dataset(x=enron_dataset['body'].values,
+                                    y=enron_dataset['label'].values)
 
-print('Generating feature matrix..')
-x_unlabel, x_train, x_test = \
-    clean(x_unlabel), clean(x_train), clean(x_test)
-
-tokenizer = Tokenizer(nb_words=max_words)
-tokenizer.fit_on_texts(x_unlabel)
-
-y_train = np.asarray(y_train, dtype='int32')
-y_test = np.asarray(y_test, dtype='int32')
-
-X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode='tfidf')
-X_unlabel = pad_sequences(X_unlabel, maxlen=max_len, dtype='float64')
-
-X_train = tokenizer.texts_to_matrix(x_train, mode='tfidf')
-X_train = pad_sequences(X_train, maxlen=max_len, dtype='float64')
-
-X_test = tokenizer.texts_to_matrix(x_test, mode='tfidf')
-X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
-
-Y_train = np_utils.to_categorical(y_train, classes)
-Y_test = np_utils.to_categorical(y_test, classes)
-
-
-NPZ_DEST = 'data/npz'
-print('Exporting npz files inside {}'.format(NPZ_DEST))
-np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
-np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
-np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
+print('Transforming dataset into vectors and matrices..')
+enron_dataset = preprocessor.transform(dataset=enron_dataset)
+vocabulary = preprocessor.vocabulary
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
@@ -101,8 +73,9 @@ encoders = []
 noises = []
 pretraining_history = []
 
-input_data = np.copy(X_unlabel)
+input_data = np.copy(enron_dataset.unlabel)
 
+print('Pretraining model..')
 for i, (n_in, n_out) in enumerate(zip(
         hidden_layers[:-1], hidden_layers[1:]), start=1):
     print('Training layer {}: {} Layers -> {} Layers'
@@ -113,14 +86,14 @@ for i, (n_in, n_out) in enumerate(zip(
     encoder = containers.Sequential([
         GaussianNoise(noise_layers[i - 1], input_shape=(n_in,)),
         Dense(input_dim=n_in, output_dim=n_out,
-              activation='sigmoid', init='uniform'),
+              activation=pretr_activ, init='uniform'),
     ])
     decoder = Dense(input_dim=n_out, output_dim=n_in,
-                    activation='sigmoid')
+                    activation=pretr_activ)
 
     ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
                        output_reconstruction=False))
-    ae.compile(loss='mean_squared_error', optimizer='adadelta')
+    ae.compile(loss=pretr_loss, optimizer=pretr_opt)
 
     temp_history = LossHistory()
     ae.fit(input_data, input_data, batch_size=batch_size,
@@ -133,71 +106,81 @@ for i, (n_in, n_out) in enumerate(zip(
 
 model = Sequential()
 for encoder, noise in zip(encoders, noises):
-    # model.add(noise)
+    model.add(noise)
     model.add(encoder)
 
 model.add(Dense(input_dim=hidden_layers[-1], output_dim=classes,
-                activation='softmax'))
+                activation=fine_activ))
 
-model.compile(loss='categorical_crossentropy', optimizer='adadelta')
+model.compile(loss=fine_loss, optimizer=fine_opt)
 
 print('\n{}\n'.format('-' * 50))
 print('Finetuning the model..')
 
 finetune_history = LossHistory()
 model.fit(
-    X_train, Y_train, batch_size=batch_size,
-    nb_epoch=epochs, show_accuracy=True, callbacks=[finetune_history],
-    validation_data=(X_test, Y_test), validation_split=0.1,
+    enron_dataset.train.X, enron_dataset.train.Y,
+    batch_size=batch_size,
+    nb_epoch=epochs, show_accuracy=True,
+    callbacks=[finetune_history],
+    validation_data=(enron_dataset.test.X, enron_dataset.test.Y),
+    validation_split=0.1,
 )
 
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
-y_pred = model.predict_classes(X_test)
+y_pred = model.predict_classes(enron_dataset.test.X)
 
 metrics = {}
 data_meta = {}
 
-data_meta['unlabeled_count'] = len(X_unlabel)
-data_meta['labeled_count'] = len(X_train) + len(X_test)
+data_meta['unlabeled_count'] = len(enron_dataset.unlabel)
+data_meta['labeled_count'] = \
+    len(enron_dataset.train.X) + len(enron_dataset.test.X)
+
 data_meta['train_data'] = {}
 data_meta['test_data'] = {}
 
-data_meta['train_data']['spam_count'] = int(sum(y_train))
-data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
+data_meta['train_data']['spam_count'] = int(sum(enron_dataset.train.y))
+data_meta['train_data']['ham_count'] = \
+    int(len(enron_dataset.train.y) - sum(enron_dataset.train.y))
 data_meta['train_data']['total_count'] = \
     data_meta['train_data']['spam_count'] + \
     data_meta['train_data']['ham_count']
 
-data_meta['test_data']['spam_count'] = int(sum(y_test))
-data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
+data_meta['test_data']['spam_count'] = int(sum(enron_dataset.test.y))
+data_meta['test_data']['ham_count'] = \
+    int(len(enron_dataset.test.y) - sum(enron_dataset.test.y))
 data_meta['test_data']['total_count'] = \
     data_meta['test_data']['spam_count'] + \
     data_meta['test_data']['ham_count']
 
-conf_matrix = confusion_matrix(y_test, y_pred)
+conf_matrix = confusion_matrix(enron_dataset.test.y, y_pred)
 
 metrics['true_positive'], metrics['true_negative'], \
     metrics['false_positive'], metrics['false_negative'] = \
     int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
     int(conf_matrix[0][1]), int(conf_matrix[1][0])
 
-metrics['accuracy'] = accuracy_score(y_test, y_pred)
-metrics['precision'] = precision_score(y_test, y_pred)
-metrics['recall'] = recall_score(y_test, y_pred)
-metrics['f1'] = f1_score(y_test, y_pred)
-metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
-
 false_positive_rate, true_positive_rate, _ = \
-    roc_curve(y_test, y_pred)
+    roc_curve(enron_dataset.test.y, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
+
+metrics['accuracy'] = accuracy_score(enron_dataset.test.y, y_pred)
+metrics['precision'] = precision_score(enron_dataset.test.y, y_pred)
+metrics['recall'] = recall_score(enron_dataset.test.y, y_pred)
+metrics['f1'] = f1_score(enron_dataset.test.y, y_pred)
+metrics['mcc'] = matthews_corrcoef(enron_dataset.test.y, y_pred)
+metrics['auc'] = roc_auc
 
 for key, value in metrics.items():
     print('{}: {}'.format(key, value))
 
 print('\n{}\n'.format('-' * 50))
-print('Saving config results inside experiments/100_exp/')
+
 exp_dir = 'experiments/exp_{}'.format(exp_num)
+print('Saving config results inside {}'.format(exp_dir))
+
 os.makedirs(exp_dir, exist_ok=True)
 
 open('{}/model_structure.json'.format(exp_dir), 'w') \
@@ -213,7 +196,6 @@ with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
     json.dump(data_meta, f, indent=4)
 
 with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
-    vocabulary = [w for w in tokenizer.word_counts]
     json.dump(vocabulary, f)
 
 plt.figure(1)
