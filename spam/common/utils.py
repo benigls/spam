@@ -3,6 +3,8 @@
 
 from sklearn.cross_validation import train_test_split
 
+from spam.common.collections import Dataset, Data
+
 
 def split_dataset(x, y, seed=0):
     """ Split the dataset into unlabel, train, and test sets. """
@@ -24,4 +26,8 @@ def split_dataset(x, y, seed=0):
             random_state=seed,
         )
 
-    return x_unlabel, (x_train, y_train), (x_test, y_test)
+    return Dataset(
+        x_unlabel,
+        Data(x_train, None, y_train),
+        Data(x_test, None, y_test)
+    )

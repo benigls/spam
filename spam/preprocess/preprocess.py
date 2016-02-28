@@ -15,6 +15,7 @@ from nltk import tokenize
 from nltk.corpus import stopwords
 
 from spam.common.exception import IllegalArgumentError
+from spam.common.collections import Dataset, Data
 
 
 class Preprocess:
@@ -53,15 +54,18 @@ class Preprocess:
 
         self.dataset = self.dataset.dropna()
 
-    def get_feature_matrix(self, x=None):
-        """ Generate feature matrix. """
+    def transform(self, dataset=None):
+        """ Transform data into vector and matrices. """
         clean = lambda words: [str(word)
                                for word in words
                                if type(word) is not float]
 
-        x_unlabel = clean(x[0])
-        x_train = clean(x[1])
-        x_test = clean(x[2])
+        x_unlabel = clean(dataset.unlabel)
+        x_train = clean(dataset.train.X)
+        x_test = clean(dataset.test.X)
+
+        y_train = dataset.train.y
+        y_test = dataset.test.y
 
         tokenizer = Tokenizer(nb_words=self.max_words)
         tokenizer.fit_on_texts(x_unlabel)
@@ -69,8 +73,7 @@ class Preprocess:
         # save the list of words in the vocabulary
         self.vocabulary = tokenizer.word_counts
 
-        X_unlabel = tokenizer.texts_to_matrix(x_unlabel,
-                                              mode=self.mode)
+        X_unlabel = tokenizer.texts_to_matrix(x_unlabel, mode=self.mode)
         X_unlabel = pad_sequences(X_unlabel, maxlen=self.max_len,
                                   dtype='float64')
 
@@ -80,17 +83,14 @@ class Preprocess:
         X_test = tokenizer.texts_to_matrix(x_test, mode=self.mode)
         X_test = pad_sequences(X_test, maxlen=self.max_len, dtype='float64')
 
-        return X_unlabel, X_train, X_test
-
-    def get_label_vector(self, y=None):
-        """ Preprocess y. """
-        y_train = y[0]
-        y_test = y[1]
-
         y_train = np.asarray(y_train, dtype='int32')
         y_test = np.asarray(y_test, dtype='int32')
 
         Y_train = np_utils.to_categorical(y_train, self.classes)
         Y_test = np_utils.to_categorical(y_test, self.classes)
 
-        return (y_train, Y_train), (y_test, Y_test)
+        return Dataset(
+            X_unlabel,
+            Data(X_train, Y_train, y_train),
+            Data(X_test, Y_test, y_test),
+        )

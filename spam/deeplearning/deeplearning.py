@@ -8,7 +8,6 @@ from keras.layers import containers
 from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
 from keras.callbacks import Callback
-from keras.utils import np_utils
 
 from spam.common.exception import IllegalArgumentError
 
@@ -38,29 +37,18 @@ class StackedDenoisingAutoEncoder:
         self.pretr_opt = kwargs.pop('pretraining_optimizer', 'adadelta')
         self.pretr_loss = kwargs.pop('pretraining_loss', 'mse')
         self.fine_activ = kwargs.pop('finetune_activation', 'softmax')
-        self.dataset = self.get_dataset(kwargs.pop('dataset', None))
+        self.fine_opt = kwargs.pop('finetune_optimizer', 'adadelta')
+        self.fine_loss = kwargs.pop('finetune_loss',
+                                    'categorical_crossentropy')
+
+        self.model = None
 
         for key, item in kwargs.items():
             raise IllegalArgumentError(
                 'Keyword argument {} with a value of  {}, '
                 'doesn\'t recognize.'.format(key, item))
 
-    def get_dataset(self, dataset):
-        """ Get dataset and unpack it. """
-        X_unlabel = dataset[0]
-
-        X_train, y_train = dataset[1][0], dataset[1][1]
-
-        X_test, y_test = dataset[2][0], dataset[2][1]
-
-        Y_train = np_utils.to_categorical(y_train, self.classes)
-        Y_test = np_utils.to_categorical(y_test, self.classes)
-
-        return {'unlabel': X_unlabel,
-                'train': (X_train, Y_train, y_train),
-                'test': (X_test, Y_test, y_test), }
-
-    def build_sda(self):
+    def pre_train(self, unlabel_data=None):
         """ Build Stack Denoising Autoencoder and perform a
         layer wise pre-training.
         """
@@ -68,7 +56,7 @@ class StackedDenoisingAutoEncoder:
         noises = []
         pretraining_history = []
 
-        input_data = np.copy(self.dataset['unlabel'])
+        input_data = np.copy(unlabel_data)
 
         for i, (n_in, n_out) in enumerate(zip(
                 self.hidden_layers[:-1], self.hidden_layers[1:]),
@@ -115,16 +103,33 @@ class StackedDenoisingAutoEncoder:
             model.add(noise)
             model.add(encoder)
 
-        return model, pretraining_history
+        self.model = model
 
-    def build_finetune(self):
+        return pretraining_history
+
+    def finetune(self, train_data=None, test_data=None):
         """ Build the finetune layer for finetuning or
-        supervise task.
+        supervise task and finetune the model.
         """
-        return Dense(input_dim=self.hidden_layers[-1],
-                     output_dim=self.classes,
-                     activation=self.fine_activ)
+        self.model.add(Dense(input_dim=self.hidden_layers[-1],
+                             output_dim=self.classes,
+                             activation=self.fine_activ))
 
-    def evaluate(self, Y, y):
+        finetune_history = LossHistory()
+
+        self.model.compile(loss=self.fine_loss, optimizer=self.fine_opt)
+
+        self.model.fit(
+            train_data.X, train_data.Y,
+            batch_size=self.batch_size,
+            nb_epoch=self.epochs, show_accuracy=True,
+            validation_data=(test_data.X, test_data.Y),
+            validation_split=0.1,
+            callbacks=[finetune_history],
+        )
+
+        return finetune_history
+
+    def evaluate(self, test_data=None):
         """ Evaluate the predicted labels and return metrics. """
         pass
