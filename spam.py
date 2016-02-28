@@ -8,9 +8,9 @@ import json
 import numpy as np
 # import matplotlib.pyplot as plt
 
-# from sklearn.metrics import (precision_score, recall_score, auc,
-#                              f1_score, accuracy_score, roc_curve,
-#                              confusion_matrix, matthews_corrcoef)
+from sklearn.metrics import (precision_score, recall_score, auc,
+                             f1_score, accuracy_score, roc_curve,
+                             confusion_matrix, matthews_corrcoef)
 
 from spam.common import utils
 from spam.dataset import EnronDataset
@@ -81,10 +81,7 @@ print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
 y_pred = sda.model.predict_classes(enron_dataset.test.X)
 
-print(y_pred)
-print(sum(y_pred))
-
-# metrics = {}
+metrics = {}
 # data_meta = {}
 
 # data_meta['unlabeled_count'] = len(X_unlabel)
@@ -104,24 +101,24 @@ print(sum(y_pred))
 #     data_meta['test_data']['spam_count'] + \
 #     data_meta['test_data']['ham_count']
 
-# conf_matrix = confusion_matrix(y_test, y_pred)
+conf_matrix = confusion_matrix(enron_dataset.test.y, y_pred)
 
-# false_positive_rate, true_positive_rate, _ = \
-#     roc_curve(y_test, y_pred)
-# roc_auc = auc(false_positive_rate, true_positive_rate)
+false_positive_rate, true_positive_rate, _ = \
+    roc_curve(enron_dataset.test.y, y_pred)
+roc_auc = auc(false_positive_rate, true_positive_rate)
 
-# for key, value in metrics.items():
-#     print('{}: {}'.format(key, value))
+for key, value in metrics.items():
+    print('{}: {}'.format(key, value))
 
-# metrics['accuracy'] = accuracy_score(y_test, y_pred)
-# metrics['precision'] = precision_score(y_test, y_pred)
-# metrics['recall'] = recall_score(y_test, y_pred)
-# metrics['f1'] = f1_score(y_test, y_pred)
-# metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
-# metrics['auc'] = roc_auc
+metrics['accuracy'] = accuracy_score(enron_dataset.test.y, y_pred)
+metrics['precision'] = precision_score(enron_dataset.test.y, y_pred)
+metrics['recall'] = recall_score(enron_dataset.test.y, y_pred)
+metrics['f1'] = f1_score(enron_dataset.test.y, y_pred)
+metrics['mcc'] = matthews_corrcoef(enron_dataset.test.y, y_pred)
+metrics['auc'] = roc_auc
 
-# for key, value in metrics.items():
-#     print('{}: {}'.format(key, value))
+for key, value in metrics.items():
+    print('{}: {}'.format(key, value))
 
 # print('\n{}\n'.format('-' * 50))
 # print('Saving config results inside experiments/100_exp/')
