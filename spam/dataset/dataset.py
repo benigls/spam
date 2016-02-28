@@ -41,8 +41,11 @@ class EnronDataset:
 
         return body
 
-    def load_dataset(self):
+    def get_dataset(self):
         """ Generate panda dataframe of body and label. """
+        if self.dataset:
+            return self.dataset
+
         ham, spam = 0, 1
         path_list = []
         dataset = []
@@ -55,9 +58,6 @@ class EnronDataset:
             dataset.append((self._read_email(path),
                             spam if path.split('.')[3] == 'spam' else ham))
 
-        import pdb
-        pdb.set_trace()
-
         body, label = zip(*dataset)
         self.dataset = pd.DataFrame(**{
             'data': {
@@ -67,6 +67,12 @@ class EnronDataset:
             'columns': ['body', 'label'],
         })
 
+        return self.dataset
+
     def to_csv(self, path=None, name=None):
         """ Export dataset into csv file. """
+        # check if dataset is loaded if not get it.
+        if not self.dataset:
+            self.get_dataset()
+
         self.dataset.to_csv('{}.csv'.format(os.path.join(path, name)))

@@ -34,14 +34,14 @@ CSV = CONFIG['csv']
 MODEL = CONFIG['model']
 
 if CONFIG['csv']['generate']:
-    enron_dataset = EnronDataset(path=CONFIG['dataset']['path'])
+    dataset = EnronDataset(path=CONFIG['dataset']['path'])
 
     print('\n{}\n'.format('-' * 50))
     print('Reading the dataset..')
-    enron_dataset.load_dataset()
+    enron_dataset = dataset.get_dataset()
 
-    print('Exporting the dataset..')
-    enron_dataset.to_csv(path='data/csv', name='dataset')
+    # print('Exporting the dataset..')
+    # dataset.to_csv(path='data/csv', name='dataset')
 
 sys.exit()
 
