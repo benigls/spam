@@ -1,66 +1,37 @@
 {
     "id": 100,
-    "csv": {
-        "generate": false,
-        "path": "data/csv",
-        "name": "dataset"
-    },
     "dataset": {
-        "path": "enron_dataset",
-        "subdirs": [
-            {
-                "name": "enron1",
-                "total_count": 5172,
-                "ham_count": 3672,
-                "spam_count": 1500
-            },
-            {
-                "name": "enron2",
-                "total_count": 5857,
-                "ham_count": 4361,
-                "spam_count": 1496
-            },
-            {
-                "name": "enron3",
-                "total_count": 5512,
-                "ham_count": 4012,
-                "spam_count": 1500
-            },
-            {
-                "name": "enron4",
-                "total_count": 6000,
-                "ham_count": 1500,
-                "spam_count": 4500
-            },
-            {
-                "name": "enron5",
-                "total_count": 5175,
-                "ham_count": 1500,
-                "spam_count": 3675
-            },
-            {
-                "name": "enron6",
-                "total_count": 6000,
-                "ham_count": 1500,
-                "spam_count": 4500
-            }
-        ]
+        "path": "enron_dataset/enron1",
+        "output": false,
+        "generate": false,
+        "filepath": "data/csv/raw_dataset.csv"
     },
     "preprocess": {
-        "max_words": 1000,
-        "max_len": 800
+        "output_csv": false,
+        "output_csv_filepath": "data/csv/clean_dataset.csv",
+        "clean_dataset": false,
+        "params": {
+            "max_words": 1000,
+            "max_len": 800,
+            "mode": "tfidf",
+            "read_csv": true,
+            "read_csv_filepath": "data/csv/clean_dataset.csv",
+            "classes": 2
+        }
     },
     "model": {
-        "batch_size": 128,
-        "classes": 2,
-        "epochs": 2,
-        "hidden_layers": [800, 500, 300],
-        "noise_layers": [0.6, 0.4],
-        "pretraining_activation": "sigmoid",
-        "pretraining_optimizer": "adadelta",
-        "pretraining_loss": "mse",
-        "finetune_activation": "softmax",
-        "finetune_optimizer": "adadelta",
-        "finetune_loss": "categorical_crossentropy"
+        "params": {
+            "batch_size": 128,
+            "classes": 2,
+            "epochs": 2,
+            "hidden_layers": [800, 500, 300],
+            "noise_layers": [0.6, 0.4],
+            "pretraining_activation": "sigmoid",
+            "pretraining_optimizer": "adadelta",
+            "pretraining_loss": "mse",
+            "finetune_activation": "softmax",
+            "finetune_optimizer": "adadelta",
+            "finetune_loss": "categorical_crossentropy"
+        }
     }
 }
