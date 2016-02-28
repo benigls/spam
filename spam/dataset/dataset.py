@@ -50,10 +50,12 @@ class EnronDataset:
         path_list = []
         dataset = []
 
+        # get the list of filepaths
         for dn, sub_dn, file_paths in os.walk(self.path):
             path_list += [os.path.join(dn, fp) for fp in file_paths
                           if self._is_valid_file(fp)]
 
+        # transforms filepaths into (text, label) tuple list
         for i, path in enumerate(path_list):
             dataset.append((self._read_email(path),
                             spam if path.split('.')[3] == 'spam' else ham))
