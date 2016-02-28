@@ -5,8 +5,12 @@ A set of function that cleans the dataset
 for machine learning process.
 """
 
+import numpy as np
+import pandas as pd
+
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from keras.utils import np_utils
 from nltk import tokenize
 from nltk.corpus import stopwords
 
@@ -15,21 +19,24 @@ from spam.common.exception import IllegalArgumentError
 
 class Preprocess:
     """ Preprocess class. """
-    def init(self, **kwargs):
+    def __init__(self, **kwargs):
         self.dataset = kwargs.pop('dataset', None)
         self.max_len = kwargs.pop('max_len', 5000)
         self.max_words = kwargs.pop('max_words', 800)
         self.mode = kwargs.pop('mode', 'tfidf')
-        self.csv_filename = kwargs.pop('csv_filename', None)
+        self.classes = kwargs.pop('classes', 2)
         self.read_csv = kwargs.pop('read_csv', False)
-        self.vocabulary = kwargs.pop('vocabulary', None)
+        self.read_csv_filepath = kwargs.pop('read_csv_filepath', None)
+
+        if self.read_csv:
+            self.dataset = pd.read_csv(self.read_csv_filepath)
 
         for key, item in kwargs.items():
             raise IllegalArgumentError(
                 'Keyword argument {} with a value of  {}, '
                 'doesn\'t recognize.'.format(key, item))
 
-    def clean(self, text):
+    def _clean(self, text):
         """ Remove words with non alphanumeric characters and
         remove stopwords in text.
         """
@@ -37,19 +44,24 @@ class Preprocess:
                          if w.isalnum()
                          if w not in stopwords.words('english')])
 
-    def clean_data(path, clean=True):
+    def clean_data(self):
         """ Clean data. """
-        pass
+        self.dataset['body'] = \
+            self.dataset['body'].apply(lambda text: self._clean(text))
 
-    def feature_matrix(self):
+        self.dataset['body'].replace('', np.nan, inplace=True)
+
+        self.dataset = self.dataset.dropna()
+
+    def get_feature_matrix(self, x=None):
         """ Generate feature matrix. """
         clean = lambda words: [str(word)
                                for word in words
                                if type(word) is not float]
 
-        x_unlabel = clean(self.dataset[0])
-        x_train = clean(self.dataset[1])
-        x_test = clean(self.dataset[2])
+        x_unlabel = clean(x[0])
+        x_train = clean(x[1])
+        x_test = clean(x[2])
 
         tokenizer = Tokenizer(nb_words=self.max_words)
         tokenizer.fit_on_texts(x_unlabel)
@@ -70,6 +82,15 @@ class Preprocess:
 
         return X_unlabel, X_train, X_test
 
-    def to_csv(self, path=None, name=None):
-        """ Export dataset into csv file. """
-        self.dataset.to_csv('{}/{}.csv'.format(path, name))
+    def get_label_vector(self, y=None):
+        """ Preprocess y. """
+        y_train = y[0]
+        y_test = y[1]
+
+        y_train = np.asarray(y_train, dtype='int32')
+        y_test = np.asarray(y_test, dtype='int32')
+
+        Y_train = np_utils.to_categorical(y_train, self.classes)
+        Y_test = np_utils.to_categorical(y_test, self.classes)
+
+        return (y_train, Y_train), (y_test, Y_test)

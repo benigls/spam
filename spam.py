@@ -6,7 +6,6 @@ import os
 import json
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import (precision_score, recall_score, auc,
@@ -15,7 +14,7 @@ from sklearn.metrics import (precision_score, recall_score, auc,
 
 from spam.common import utils
 from spam.dataset import EnronDataset
-from spam.preprocess import preprocess
+from spam.preprocess import Preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder, LossHistory
 
 
@@ -30,42 +29,52 @@ if not CONFIG:
     print('Can\'t read config file.')
     sys.exit()
 
-CSV = CONFIG['csv']
 MODEL = CONFIG['model']
+print('\n{}\n'.format('-' * 50))
 
-if CONFIG['csv']['generate']:
+if CONFIG['dataset']['generate']:
+    print('Reading the dataset..')
     dataset = EnronDataset(path=CONFIG['dataset']['path'])
 
-    print('\n{}\n'.format('-' * 50))
-    print('Reading the dataset..')
     enron_dataset = dataset.get_dataset()
 
-    # print('Exporting the dataset..')
-    # dataset.to_csv(path='data/csv', name='dataset')
+    if CONFIG['dataset']['output']:
+        print('Exporting the dataset..')
+        dataset.to_csv(filepath=CONFIG['dataset']['filepath'])
 
-sys.exit()
 
-print('\n{}\n'.format('-' * 50))
-print('Reading csv files..')
-dataset = pd.read_csv(
-    '{}/{}.csv'.format(CSV['path'], CSV['name']),
-    encoding='iso-8859-1')
+print('Reading the dataset..')
+if CONFIG['preprocess']['params']['read_csv']:
+    preprocessor = Preprocess(**CONFIG['preprocess']['params'])
+else:
+    preprocessor = Preprocess(dataset=enron_dataset,
+                              **CONFIG['preprocess']['params'])
+
+if CONFIG['preprocess']['clean_dataset']:
+    print('Cleaning the dataset..')
+    preprocessor.clean_data()
+
+if CONFIG['preprocess']['output_csv']:
+    print('Exporting clean dataset..')
+    preprocessor.dataset.to_csv(CONFIG['preprocess']['output_csv_filepath'])
 
 print('Spliting the dataset..')
+dataset = preprocessor.dataset
+
 x_unlabel, (x_train, y_train), (x_test, y_test) = \
-    utils.split_dataset(dataset['body'].values,
-                        dataset['label'].values)
+    utils.split_dataset(dataset['body'].values, dataset['label'].values)
 
-y_train = np.asarray(y_train, dtype='int32')
-y_test = np.asarray(y_test, dtype='int32')
+print('Generating feature matrix and label vector..')
+X_unlabel, X_train, X_test = preprocessor \
+    .get_feature_matrix(x=(x_unlabel, x_train, x_test))
 
-print('Generating feature matrix..')
-X_unlabel, X_train, X_test, vocabulary = preprocess.feature_matrix(
-    dataset=[x_unlabel, x_train, x_test, ],
-    max_words=CONFIG['preprocess']['max_words'],
-    max_len=CONFIG['preprocess']['max_len']
-)
+(y_train, Y_train), (y_test, Y_test) = preprocessor \
+    .get_label_vector(y=(y_train, y_test))
 
+vocabulary = preprocessor.vocabulary
+
+import pdb
+pdb.set_trace()
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')

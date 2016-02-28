@@ -71,10 +71,10 @@ class EnronDataset:
 
         return self.dataset
 
-    def to_csv(self, path=None, name=None):
+    def to_csv(self, filepath=None):
         """ Export dataset into csv file. """
         # check if dataset is loaded if not get it.
-        if not self.dataset:
+        if self.dataset is None:
             self.get_dataset()
 
-        self.dataset.to_csv('{}.csv'.format(os.path.join(path, name)))
+        self.dataset.to_csv(os.path.join(filepath))
