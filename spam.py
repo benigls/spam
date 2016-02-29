@@ -6,6 +6,8 @@ import os
 import json
 import timeit
 
+from collections import OrderedDict
+
 import numpy as np
 
 from spam.common import utils
@@ -20,7 +22,7 @@ np.random.seed(1337)
 CONFIG_FILENAME = 'config.json'
 
 with open(CONFIG_FILENAME, 'r') as f:
-    CONFIG = json.load(f)
+    CONFIG = json.load(f, object_pairs_hook=OrderedDict)
 
 if not CONFIG:
     print('Can\'t read config file.')
@@ -114,11 +116,11 @@ utils.plot_loss_history(data=finetune_history,
                         name='finetune_loss',
                         path=exp_dir, )
 
-# print('Updating config id..')
-# CONFIG['id'] += 1
+print('Updating config id..')
+CONFIG['id'] += 1
 
-# with open(CONFIG_FILENAME, 'w+') as f:
-#     json.dump(CONFIG, f, indent=4)
+with open(CONFIG_FILENAME, 'w+') as f:
+    json.dump(CONFIG, f, indent=4)
 
 end_time = timeit.default_timer()
 
