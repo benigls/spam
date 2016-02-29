@@ -1,5 +1,5 @@
 {
-    "id": 101,
+    "id": 102,
     "dataset": {
         "path": "enron_dataset/enron1",
         "output": false,
@@ -23,10 +23,17 @@
         "params": {
             "batch_size": 256,
             "classes": 2,
-            "pretraining_epochs": 250,
-            "finetune_epochs": 600,
-            "hidden_layers": [800, 500, 300],
-            "noise_layers": [0.6, 0.4],
+            "pretraining_epochs": 1,
+            "finetune_epochs": 1,
+            "hidden_layers": [
+                800,
+                500,
+                300
+            ],
+            "noise_layers": [
+                0.6,
+                0.4
+            ],
             "pretraining_activation": "sigmoid",
             "pretraining_optimizer": "adadelta",
             "pretraining_loss": "mse",
