@@ -47,11 +47,6 @@ class StackedDenoisingAutoEncoder:
                                     'categorical_crossentropy')
 
         self.model = None
-        # self.pretr_opt = SGD(momentum=0.1, decay=10e-2, nestrov=True)
-        # self.fine_opt = SGD(momentum=0.1, decay=10e-2, nestrov=True)
-
-        # self.pretr_activ = tanh(-1)
-        # self.fine_activ = tanh(-1)
 
         for key, item in kwargs.items():
             raise IllegalArgumentError(
