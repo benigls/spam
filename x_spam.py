@@ -29,12 +29,12 @@ start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
-exp_num = 100
+exp_num = 'X_100'
 max_len = 800
 max_words = 1000
 batch_size = 128
 classes = 2
-epochs = 20
+epochs = 500
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -58,7 +58,7 @@ class LossHistory(Callback):
 
 print('\n{}\n'.format('-' * 50))
 print('Reading csv files..')
-dataset = pd.read_csv('data/csv/dataset.csv', encoding='iso-8859-1')
+dataset = pd.read_csv('data/csv/clean_dataset.csv', encoding='iso-8859-1')
 
 print('Spliting the dataset..')
 x_unlabel, (x_train, y_train), (x_test, y_test) = \
@@ -86,13 +86,6 @@ X_test = pad_sequences(X_test, maxlen=max_len, dtype='float64')
 
 Y_train = np_utils.to_categorical(y_train, classes)
 Y_test = np_utils.to_categorical(y_test, classes)
-
-
-NPZ_DEST = 'data/npz'
-print('Exporting npz files inside {}'.format(NPZ_DEST))
-np.savez('{}/unlabel.npz'.format(NPZ_DEST), X=X_unlabel)
-np.savez('{}/train.npz'.format(NPZ_DEST), X=X_train, y=y_train)
-np.savez('{}/test.npz'.format(NPZ_DEST), X=X_test, y=y_test)
 
 print('\n{}\n'.format('-' * 50))
 print('Building model..')
@@ -182,15 +175,16 @@ metrics['true_positive'], metrics['true_negative'], \
     int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
     int(conf_matrix[0][1]), int(conf_matrix[1][0])
 
+false_positive_rate, true_positive_rate, _ = \
+    roc_curve(y_test, y_pred)
+roc_auc = auc(false_positive_rate, true_positive_rate)
+
 metrics['accuracy'] = accuracy_score(y_test, y_pred)
 metrics['precision'] = precision_score(y_test, y_pred)
 metrics['recall'] = recall_score(y_test, y_pred)
 metrics['f1'] = f1_score(y_test, y_pred)
 metrics['mcc'] = matthews_corrcoef(y_test, y_pred)
-
-false_positive_rate, true_positive_rate, _ = \
-    roc_curve(y_test, y_pred)
-roc_auc = auc(false_positive_rate, true_positive_rate)
+metrics['auc'] = roc_auc
 
 for key, value in metrics.items():
     print('{}: {}'.format(key, value))
