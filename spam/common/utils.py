@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import random
+
 import matplotlib.pyplot as plt
 
 from sklearn.cross_validation import train_test_split
@@ -35,7 +37,7 @@ def split_dataset(x, y, seed=0):
     )
 
 
-def get_dataset_meta(self, dataset=None):
+def get_dataset_meta(dataset=None):
     """ Get the dataset meta. """
     data_meta = {}
 
@@ -66,6 +68,7 @@ def get_dataset_meta(self, dataset=None):
 def plot_loss_history(data=None, title=None, name=None, path=None):
     """ Plot and export loss history. """
     # TODO: add labels to loss history
+    plt.figure(random.randint(a=1, b=100))
     plt.title(title)
     plt.plot(data)
     plt.savefig('{}/{}.png'.format(path, name))
