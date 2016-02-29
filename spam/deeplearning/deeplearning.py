@@ -9,6 +9,10 @@ from keras.layers.core import Dense, AutoEncoder
 from keras.layers.noise import GaussianNoise
 from keras.callbacks import Callback
 
+from sklearn.metrics import (precision_score, recall_score, auc,
+                             f1_score, accuracy_score, roc_curve,
+                             confusion_matrix, matthews_corrcoef)
+
 from spam.common.exception import IllegalArgumentError
 
 
@@ -136,6 +140,26 @@ class StackedDenoisingAutoEncoder:
 
         return finetune_history.losses
 
-    def evaluate(self, test_data=None):
-        """ Evaluate the predicted labels and return metrics. """
-        pass
+    def evaluate(self, dataset=None):
+        """ Evaluate the predicted labels and return the metrics. """
+        metrics = {}
+        y_pred = self.model.predict_classes(dataset.test.X)
+        conf_matrix = confusion_matrix(dataset.test.y, y_pred)
+
+        metrics['true_positive'], metrics['true_negative'], \
+            metrics['false_positive'], metrics['false_negative'] = \
+            int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
+            int(conf_matrix[0][1]), int(conf_matrix[1][0])
+
+        false_positive_rate, true_positive_rate, _ = \
+            roc_curve(dataset.test.y, y_pred)
+        roc_auc = auc(false_positive_rate, true_positive_rate)
+
+        metrics['accuracy'] = accuracy_score(dataset.test.y, y_pred)
+        metrics['precision'] = precision_score(dataset.test.y, y_pred)
+        metrics['recall'] = recall_score(dataset.test.y, y_pred)
+        metrics['f1'] = f1_score(dataset.test.y, y_pred)
+        metrics['mcc'] = matthews_corrcoef(dataset.test.y, y_pred)
+        metrics['auc'] = roc_auc
+
+        return metrics
