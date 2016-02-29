@@ -1,5 +1,5 @@
 {
-    "id": 100,
+    "id": 101,
     "dataset": {
         "path": "enron_dataset/enron1",
         "output": false,
@@ -21,15 +21,16 @@
     },
     "model": {
         "params": {
-            "batch_size": 128,
+            "batch_size": 256,
             "classes": 2,
-            "epochs": 2,
+            "pretraining_epochs": 250,
+            "finetune_epochs": 600,
             "hidden_layers": [800, 500, 300],
             "noise_layers": [0.6, 0.4],
             "pretraining_activation": "sigmoid",
             "pretraining_optimizer": "adadelta",
             "pretraining_loss": "mse",
-            "finetune_activation": "softmax",
+            "finetune_activation": "sigmoid",
             "finetune_optimizer": "adadelta",
             "finetune_loss": "categorical_crossentropy"
         }
