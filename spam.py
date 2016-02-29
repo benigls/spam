@@ -106,6 +106,9 @@ with open('{}/data_meta.json'.format(exp_dir), 'w') as f:
 with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
     json.dump(vocabulary, f)
 
+with open('{}/{}'.format(exp_dir, CONFIG_FILENAME), 'w+') as f:
+    json.dump(CONFIG, f, indent=4)
+
 utils.plot_loss_history(data=pretraining_history,
                         title='Pretraining loss history',
                         name='pretraining_loss',
