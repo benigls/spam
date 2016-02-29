@@ -41,8 +41,8 @@ if CONFIG['dataset']['generate']:
         dataset.to_csv(filepath=CONFIG['dataset']['filepath'])
 
 
-print('Reading the dataset..')
 if CONFIG['preprocess']['params']['read_csv']:
+    print('Reading the dataset..')
     preprocessor = Preprocess(**CONFIG['preprocess']['params'])
 else:
     preprocessor = Preprocess(dataset=enron_dataset,

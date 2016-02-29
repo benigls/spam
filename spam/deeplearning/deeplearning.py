@@ -75,7 +75,7 @@ class StackedDenoisingAutoEncoder:
             encoder = containers.Sequential([
                 GaussianNoise(self.noise_layers[i - 1], input_shape=(n_in,)),
                 Dense(input_dim=n_in, output_dim=n_out,
-                      activation=self.pretr_activ),
+                      activation=self.pretr_activ, init='uniform'),
             ])
             decoder = Dense(input_dim=n_out, output_dim=n_in,
                             activation=self.pretr_activ)
