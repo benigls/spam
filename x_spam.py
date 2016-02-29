@@ -122,9 +122,9 @@ model.fit(
     enron_dataset.train.X, enron_dataset.train.Y,
     batch_size=batch_size,
     nb_epoch=epochs, show_accuracy=True,
-    callbacks=[finetune_history],
     validation_data=(enron_dataset.test.X, enron_dataset.test.Y),
     validation_split=0.1,
+    callbacks=[finetune_history],
 )
 
 print('\n{}\n'.format('-' * 50))

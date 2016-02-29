@@ -4,6 +4,7 @@
 import sys
 import os
 import json
+import timeit
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from spam.dataset import EnronDataset
 from spam.preprocess import Preprocess
 from spam.deeplearning import StackedDenoisingAutoEncoder
 
+start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
@@ -107,6 +109,11 @@ data_meta['test_data']['total_count'] = \
 
 conf_matrix = confusion_matrix(enron_dataset.test.y, y_pred)
 
+metrics['true_positive'], metrics['true_negative'], \
+    metrics['false_positive'], metrics['false_negative'] = \
+    int(conf_matrix[0][0]), int(conf_matrix[1][1]), \
+    int(conf_matrix[0][1]), int(conf_matrix[1][0])
+
 false_positive_rate, true_positive_rate, _ = \
     roc_curve(enron_dataset.test.y, y_pred)
 roc_auc = auc(false_positive_rate, true_positive_rate)
@@ -164,7 +171,7 @@ plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
 
 plt.figure(3)
 plt.title('Finetune loss history')
-plt.plot(finetune_history.losses)
+plt.plot(finetune_history)
 plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 
 # print('Updating config id..')
@@ -173,4 +180,7 @@ plt.savefig('{}/finetune_loss.png'.format(exp_dir))
 # with open(CONFIG_FILENAME, 'w+') as f:
 #     json.dump(CONFIG, f, indent=4)
 
+end_time = timeit.default_timer()
+
 print('Done!')
+print('Run for %.2fm' % ((end_time - start_time) / 60.0))

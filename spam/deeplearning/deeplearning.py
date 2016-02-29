@@ -28,7 +28,8 @@ class LossHistory(Callback):
 class StackedDenoisingAutoEncoder:
     """ Class for deel learning methods. """
     def __init__(self, **kwargs):
-        self.epochs = kwargs.pop('epochs', 0)
+        self.pretr_epochs = kwargs.pop('pretraining_epochs', 0)
+        self.fine_epochs = kwargs.pop('finetune_epochs', 0)
         self.batch_size = kwargs.pop('batch_size', 0)
         self.classes = kwargs.pop('classes', 1)
         self.hidden_layers = kwargs.pop('hidden_layers', None)
@@ -42,6 +43,11 @@ class StackedDenoisingAutoEncoder:
                                     'categorical_crossentropy')
 
         self.model = None
+        # self.pretr_opt = SGD(momentum=0.1, decay=10e-2, nestrov=True)
+        # self.fine_opt = SGD(momentum=0.1, decay=10e-2, nestrov=True)
+
+        # self.pretr_activ = tanh(-1)
+        # self.fine_activ = tanh(-1)
 
         for key, item in kwargs.items():
             raise IllegalArgumentError(
@@ -70,7 +76,7 @@ class StackedDenoisingAutoEncoder:
             encoder = containers.Sequential([
                 GaussianNoise(self.noise_layers[i - 1], input_shape=(n_in,)),
                 Dense(input_dim=n_in, output_dim=n_out,
-                      activation=self.pretr_activ, init='uniform'),
+                      activation=self.pretr_activ),
             ])
             decoder = Dense(input_dim=n_out, output_dim=n_in,
                             activation=self.pretr_activ)
@@ -89,7 +95,7 @@ class StackedDenoisingAutoEncoder:
             # it also store the loss history every epochs.
             ae.fit(input_data, input_data,
                    batch_size=self.batch_size,
-                   nb_epoch=self.epochs,
+                   nb_epoch=self.pretr_epochs,
                    callbacks=[temp_history],)
 
             pretraining_history += temp_history.losses
@@ -100,7 +106,7 @@ class StackedDenoisingAutoEncoder:
         # merge denoising autoencoder layers
         model = Sequential()
         for encoder, noise in zip(encoders, noises):
-            model.add(noise)
+            # model.add(noise)
             model.add(encoder)
 
         self.model = model
@@ -112,23 +118,23 @@ class StackedDenoisingAutoEncoder:
         supervise task and finetune the model.
         """
         self.model.add(Dense(input_dim=self.hidden_layers[-1],
-                             output_dim=self.classes,
-                             activation=self.fine_activ))
+                             output_dim=self.classes))
 
         finetune_history = LossHistory()
 
-        self.model.compile(loss=self.fine_loss, optimizer=self.fine_opt)
+        self.model.compile(loss=self.fine_loss,
+                           optimizer=self.fine_opt)
 
         self.model.fit(
             train_data.X, train_data.Y,
             batch_size=self.batch_size,
-            nb_epoch=self.epochs, show_accuracy=True,
+            nb_epoch=self.fine_epochs, show_accuracy=True,
             validation_data=(test_data.X, test_data.Y),
             validation_split=0.1,
             callbacks=[finetune_history],
         )
 
-        return finetune_history
+        return finetune_history.losses
 
     def evaluate(self, test_data=None):
         """ Evaluate the predicted labels and return metrics. """
