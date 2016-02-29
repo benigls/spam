@@ -93,7 +93,7 @@ open('{}/model_structure.json'.format(exp_dir), 'w') \
 sda.model.save_weights('{}/model_weights.hdf5'
                        .format(exp_dir), overwrite=True)
 
-data_meta = utils.get_dataset_meta(data_meta=enron_dataset)
+data_meta = utils.get_dataset_meta(dataset=enron_dataset)
 
 with open('{}/metrics.json'.format(exp_dir), 'w') as f:
     json.dump(metrics, f, indent=4)
