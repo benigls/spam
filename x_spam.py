@@ -29,12 +29,12 @@ start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
-exp_num = 'X_100'
+exp_num = 102
 max_len = 800
 max_words = 1000
-batch_size = 128
+batch_size = 256
 classes = 2
-epochs = 500
+epochs = 300
 hidden_layers = [800, 500, 300, ]
 noise_layers = [0.6, 0.4, ]
 
@@ -140,7 +140,7 @@ print('Finetuning the model..')
 finetune_history = LossHistory()
 model.fit(
     X_train, Y_train, batch_size=batch_size,
-    nb_epoch=epochs, show_accuracy=True, callbacks=[finetune_history],
+    nb_epoch=1000, show_accuracy=True, callbacks=[finetune_history],
     validation_data=(X_test, Y_test), validation_split=0.1,
 )
 
