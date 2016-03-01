@@ -29,14 +29,16 @@ start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
-exp_num = 102
+enron_num = 1
+exp_num = 'enron{}_2'.format(enron_num)
 max_len = 800
 max_words = 1000
-batch_size = 256
+batch_size = 128
 classes = 2
 epochs = 300
-hidden_layers = [800, 500, 300, ]
-noise_layers = [0.6, 0.4, ]
+fine_epochs = 400
+hidden_layers = [800, 500, 300, 100, ]
+noise_layers = [0.6, 0.4, 0.2, ]
 
 clean = lambda words: [str(word)
                        for word in words
@@ -58,7 +60,8 @@ class LossHistory(Callback):
 
 print('\n{}\n'.format('-' * 50))
 print('Reading csv files..')
-dataset = pd.read_csv('data/csv/clean_dataset.csv', encoding='iso-8859-1')
+dataset = pd.read_csv('data/csv/enron{}_clean_dataset.csv'.format(enron_num),
+                      encoding='iso-8859-1')
 
 print('Spliting the dataset..')
 x_unlabel, (x_train, y_train), (x_test, y_test) = \
@@ -119,7 +122,7 @@ for i, (n_in, n_out) in enumerate(zip(
     ae.fit(input_data, input_data, batch_size=batch_size,
            nb_epoch=epochs, callbacks=[temp_history])
 
-    pretraining_history += temp_history.losses
+    pretraining_history.append(temp_history.losses)
     encoders.append(ae.layers[0].encoder.layers[1])
     noises.append(ae.layers[0].encoder.layers[0])
     input_data = ae.predict(input_data)
@@ -140,7 +143,8 @@ print('Finetuning the model..')
 finetune_history = LossHistory()
 model.fit(
     X_train, Y_train, batch_size=batch_size,
-    nb_epoch=1000, show_accuracy=True, callbacks=[finetune_history],
+    nb_epoch=fine_epochs, show_accuracy=True,
+    callbacks=[finetune_history],
     validation_data=(X_test, Y_test), validation_split=0.1,
 )
 
@@ -190,8 +194,9 @@ for key, value in metrics.items():
     print('{}: {}'.format(key, value))
 
 print('\n{}\n'.format('-' * 50))
-print('Saving config results inside experiments/100_exp/')
 exp_dir = 'experiments/exp_{}'.format(exp_num)
+
+print('Saving config results inside {}'.format(exp_dir))
 os.makedirs(exp_dir, exist_ok=True)
 
 open('{}/model_structure.json'.format(exp_dir), 'w') \
@@ -222,16 +227,18 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.savefig('{}/roc_curve.png'.format(exp_dir))
 
-# TODO: add labels to loss history
 plt.figure(2)
-plt.title('Pretraining loss history')
-plt.plot(pretraining_history)
-plt.savefig('{}/pretraining_loss.png'.format(exp_dir))
-
-plt.figure(3)
 plt.title('Finetune loss history')
 plt.plot(finetune_history.losses)
 plt.savefig('{}/finetune_loss.png'.format(exp_dir))
+
+# TODO: add labels to loss history
+for i, loss_history in enumerate(pretraining_history, start=1):
+    plt.figure(i + 2)
+    plt.title('Pretraining loss history of hidden layer #{}'.format(i))
+    plt.plot(loss_history)
+    plt.savefig('{}/L{}_pretraining_loss.png'.format(exp_dir, i))
+
 
 end_time = timeit.default_timer()
 
