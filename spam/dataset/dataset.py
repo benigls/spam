@@ -46,7 +46,7 @@ class EnronDataset:
         if self.dataset:
             return self.dataset
 
-        ham, spam = 0, 1
+        ham, spam = 1, 0
         path_list = []
         dataset = []
 
