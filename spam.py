@@ -70,11 +70,7 @@ print('Building model..')
 sda = StackedDenoisingAutoEncoder(**CONFIG['model']['params'])
 
 print('Pretraining model..')
-pretraining_history = sda.pre_train(enron_dataset.unlabel)
-
-print('Finetuning the model..')
-finetune_history = sda.finetune(train_data=enron_dataset.train,
-                                test_data=enron_dataset.test, )
+pretraining_history, finetune_history = sda.train(enron_dataset.unlabel)
 
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')

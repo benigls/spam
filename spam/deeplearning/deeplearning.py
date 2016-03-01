@@ -53,9 +53,9 @@ class StackedDenoisingAutoEncoder:
                 'Keyword argument {} with a value of  {}, '
                 'doesn\'t recognize.'.format(key, item))
 
-    def pre_train(self, unlabel_data=None):
-        """ Build Stack Denoising Autoencoder and perform a
-        layer wise pre-training.
+    def train(self, unlabel_data=None):
+        """ Build Stack Denoising Autoencoder. Perform a
+        layer wise pre-training and finetune the model.
         """
         encoders = []
         noises = []
@@ -97,7 +97,7 @@ class StackedDenoisingAutoEncoder:
                    nb_epoch=self.pretr_epochs,
                    callbacks=[temp_history],)
 
-            pretraining_history += temp_history.losses
+            pretraining_history.append(temp_history.losses)
             encoders.append(ae.layers[0].encoder.layers[1])
             noises.append(ae.layers[0].encoder.layers[0])
             input_data = ae.predict(input_data)
@@ -108,23 +108,14 @@ class StackedDenoisingAutoEncoder:
             # model.add(noise)
             model.add(encoder)
 
-        self.model = model
-
-        return pretraining_history
-
-    def finetune(self, train_data=None, test_data=None):
-        """ Build the finetune layer for finetuning or
-        supervise task and finetune the model.
-        """
-        self.model.add(Dense(input_dim=self.hidden_layers[-1],
+        print('Finetuning the model..')
+        model.add(Dense(input_dim=self.hidden_layers[-1],
                              output_dim=self.classes))
 
         finetune_history = LossHistory()
 
-        self.model.compile(loss=self.fine_loss,
-                           optimizer=self.fine_opt)
-
-        self.model.fit(
+        model.compile(loss=self.fine_loss, optimizer=self.fine_opt)
+        model.fit(
             train_data.X, train_data.Y,
             batch_size=self.batch_size,
             nb_epoch=self.fine_epochs, show_accuracy=True,
@@ -133,7 +124,7 @@ class StackedDenoisingAutoEncoder:
             callbacks=[finetune_history],
         )
 
-        return finetune_history.losses
+        return pretraining_history, finetune_history.losses
 
     def evaluate(self, dataset=None):
         """ Evaluate the predicted labels and return the metrics. """
