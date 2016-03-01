@@ -70,7 +70,7 @@ print('Building model..')
 sda = StackedDenoisingAutoEncoder(**CONFIG['model']['params'])
 
 print('Pretraining model..')
-pretraining_history, finetune_history = sda.train(enron_dataset.unlabel)
+pretraining_history, finetune_history = sda.train(enron_dataset)
 
 print('\n{}\n'.format('-' * 50))
 print('Evaluating model..')
@@ -105,10 +105,13 @@ with open('{}/vocabulary.json'.format(exp_dir), 'w') as f:
 with open('{}/{}'.format(exp_dir, CONFIG_FILENAME), 'w+') as f:
     json.dump(CONFIG, f, indent=4)
 
-utils.plot_loss_history(data=pretraining_history,
-                        title='Pretraining loss history',
-                        name='pretraining_loss',
-                        path=exp_dir, )
+for i, loss_history in enumerate(pretraining_history, start=1):
+    utils.plot_loss_history(
+        data=loss_history,
+        title='Pretraining loss history of hidden layer #{}'.format(i),
+        name='L{}_pretraining_loss'.format(i),
+        path=exp_dir,
+    )
 
 utils.plot_loss_history(data=finetune_history,
                         title='Finetune loss history',

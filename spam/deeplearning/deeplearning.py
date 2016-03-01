@@ -53,7 +53,7 @@ class StackedDenoisingAutoEncoder:
                 'Keyword argument {} with a value of  {}, '
                 'doesn\'t recognize.'.format(key, item))
 
-    def train(self, unlabel_data=None):
+    def train(self, dataset=None):
         """ Build Stack Denoising Autoencoder. Perform a
         layer wise pre-training and finetune the model.
         """
@@ -61,7 +61,7 @@ class StackedDenoisingAutoEncoder:
         noises = []
         pretraining_history = []
 
-        input_data = np.copy(unlabel_data)
+        input_data = np.copy(dataset.unlabel)
 
         for i, (n_in, n_out) in enumerate(zip(
                 self.hidden_layers[:-1], self.hidden_layers[1:]),
@@ -110,19 +110,21 @@ class StackedDenoisingAutoEncoder:
 
         print('Finetuning the model..')
         model.add(Dense(input_dim=self.hidden_layers[-1],
-                             output_dim=self.classes))
+                        output_dim=self.classes))
 
         finetune_history = LossHistory()
 
         model.compile(loss=self.fine_loss, optimizer=self.fine_opt)
         model.fit(
-            train_data.X, train_data.Y,
+            dataset.train.X, dataset.train.Y,
             batch_size=self.batch_size,
             nb_epoch=self.fine_epochs, show_accuracy=True,
-            validation_data=(test_data.X, test_data.Y),
+            validation_data=(dataset.test.X, dataset.test.Y),
             validation_split=0.1,
             callbacks=[finetune_history],
         )
+
+        self.model = model
 
         return pretraining_history, finetune_history.losses
 
