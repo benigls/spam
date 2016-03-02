@@ -77,7 +77,7 @@ def split_dataset(x, y, seed=0):
 
 def df_params(paths, labels):
     """ Returns a dict as a parameter for the dataframe. """
-    ham, spam = 0, 1
+    ham, spam = 1, 0
     data = {'label': [], 'body': []}
     columns = ['label', 'body']
 
