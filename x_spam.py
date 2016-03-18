@@ -29,8 +29,8 @@ start_time = timeit.default_timer()
 
 np.random.seed(1337)
 
-enron_num = 1
-exp_num = 'enron{}_2'.format(enron_num)
+enron_num = 6
+exp_num = 'enron{}'.format(enron_num)
 max_len = 800
 max_words = 1000
 batch_size = 128
@@ -160,14 +160,14 @@ data_meta['labeled_count'] = len(X_train) + len(X_test)
 data_meta['train_data'] = {}
 data_meta['test_data'] = {}
 
-data_meta['train_data']['spam_count'] = int(sum(y_train))
-data_meta['train_data']['ham_count'] = int(len(y_train) - sum(y_train))
+data_meta['train_data']['ham_count'] = int(sum(y_train))
+data_meta['train_data']['spam_count'] = int(len(y_train) - int(sum(y_train)))
 data_meta['train_data']['total_count'] = \
     data_meta['train_data']['spam_count'] + \
     data_meta['train_data']['ham_count']
 
-data_meta['test_data']['spam_count'] = int(sum(y_test))
-data_meta['test_data']['ham_count'] = int(len(y_test) - sum(y_test))
+data_meta['test_data']['ham_count'] = int(sum(y_test))
+data_meta['test_data']['spam_count'] = int(len(y_test) - int(sum(y_test)))
 data_meta['test_data']['total_count'] = \
     data_meta['test_data']['spam_count'] + \
     data_meta['test_data']['ham_count']
